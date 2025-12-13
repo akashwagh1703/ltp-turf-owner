@@ -17,9 +17,11 @@ export default function PayoutsScreen() {
     setLoading(true);
     try {
       const response = await payoutService.getPayouts();
-      setPayouts(response.data);
+      console.log('📊 Payouts Response:', response.data);
+      const payoutsData = Array.isArray(response.data) ? response.data : (response.data.data || []);
+      setPayouts(payoutsData);
     } catch (error) {
-      console.error('Load payouts error:', error);
+      console.error('❌ Load payouts error:', error);
     } finally {
       setLoading(false);
     }
@@ -57,13 +59,21 @@ export default function PayoutsScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Payouts</Text>
       </View>
-      <FlatList
-        data={payouts}
-        renderItem={renderPayout}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadPayouts} />}
-      />
+      {payouts.length === 0 && !loading ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyIcon}>💰</Text>
+          <Text style={styles.emptyTitle}>No Payouts Yet</Text>
+          <Text style={styles.emptyText}>Payouts will appear here once bookings are completed</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={payouts}
+          renderItem={renderPayout}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={loading} onRefresh={loadPayouts} />}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -145,5 +155,25 @@ const styles = StyleSheet.create({
     ...FONTS.small,
     color: COLORS.success,
     marginTop: SIZES.sm,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SIZES.xl,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: SIZES.md,
+  },
+  emptyTitle: {
+    ...FONTS.h3,
+    color: COLORS.text,
+    marginBottom: SIZES.sm,
+  },
+  emptyText: {
+    ...FONTS.body,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
 });

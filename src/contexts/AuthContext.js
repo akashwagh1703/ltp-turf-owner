@@ -29,10 +29,10 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (phone, otp) => {
     const response = await authService.verifyOtp(phone, otp);
-    const { token, user: userData } = response.data;
+    const { token, owner } = response.data;
     await AsyncStorage.setItem('token', token);
-    await AsyncStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
+    await AsyncStorage.setItem('user', JSON.stringify(owner));
+    setUser(owner);
     return response;
   };
 

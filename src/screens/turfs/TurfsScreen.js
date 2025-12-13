@@ -17,9 +17,13 @@ export default function TurfsScreen({ navigation }) {
     setLoading(true);
     try {
       const response = await turfService.getTurfs();
-      setTurfs(response.data);
+      console.log('📊 Turfs Response:', response.data);
+      // Handle both direct array and wrapped data
+      const turfsData = Array.isArray(response.data) ? response.data : (response.data.data || []);
+      console.log('📊 Turfs Data:', turfsData);
+      setTurfs(turfsData);
     } catch (error) {
-      console.error('Load turfs error:', error);
+      console.error('❌ Load turfs error:', error);
     } finally {
       setLoading(false);
     }
@@ -32,11 +36,10 @@ export default function TurfsScreen({ navigation }) {
           <Text style={styles.turfName}>{item.name}</Text>
           <Text style={[styles.status, styles[item.status]]}>{item.status}</Text>
         </View>
-        <Text style={styles.turfLocation}>{item.city}, {item.state}</Text>
-        <Text style={styles.turfSport}>{item.sport_type}</Text>
+        <Text style={styles.turfLocation}>{item.city}</Text>
         <View style={styles.turfFooter}>
-          <Text style={styles.turfPrice}>₹{item.uniform_price || 'Dynamic'}/hr</Text>
-          <Text style={styles.turfSize}>{item.size}</Text>
+          <Text style={styles.turfSport}>{item.sport_type}</Text>
+          <Text style={styles.turfPrice}>₹{item.uniform_price || 'Dynamic'}</Text>
         </View>
       </Card>
     </TouchableOpacity>
@@ -46,14 +49,22 @@ export default function TurfsScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>My Turfs</Text>
+        <Text style={styles.subtitle}>Total: {turfs.length}</Text>
       </View>
-      <FlatList
-        data={turfs}
-        renderItem={renderTurf}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadTurfs} />}
-      />
+      {turfs.length === 0 && !loading ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyText}>No turfs found</Text>
+          <Text style={styles.emptySubtext}>Contact admin to add turfs to your account</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={turfs}
+          renderItem={renderTurf}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={loading} onRefresh={loadTurfs} />}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -69,6 +80,27 @@ const styles = StyleSheet.create({
   title: {
     ...FONTS.h1,
     color: COLORS.text,
+  },
+  subtitle: {
+    ...FONTS.caption,
+    color: COLORS.textSecondary,
+    marginTop: SIZES.xs,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SIZES.xl,
+  },
+  emptyText: {
+    ...FONTS.h3,
+    color: COLORS.text,
+    marginBottom: SIZES.sm,
+  },
+  emptySubtext: {
+    ...FONTS.body,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
   list: {
     padding: SIZES.lg,
@@ -108,12 +140,12 @@ const styles = StyleSheet.create({
   turfLocation: {
     ...FONTS.caption,
     color: COLORS.textSecondary,
-    marginBottom: SIZES.xs,
+    marginBottom: SIZES.sm,
   },
   turfSport: {
     ...FONTS.caption,
     color: COLORS.text,
-    marginBottom: SIZES.sm,
+    textTransform: 'capitalize',
   },
   turfFooter: {
     flexDirection: 'row',
@@ -121,12 +153,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   turfPrice: {
-    ...FONTS.body,
+    ...FONTS.caption,
     fontWeight: '600',
     color: COLORS.primary,
-  },
-  turfSize: {
-    ...FONTS.caption,
-    color: COLORS.textSecondary,
   },
 });

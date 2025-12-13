@@ -20,9 +20,11 @@ export default function BookingsScreen({ navigation }) {
     try {
       const params = filter !== 'all' ? { status: filter } : {};
       const response = await bookingService.getBookings(params);
-      setBookings(response.data);
+      console.log('📊 Bookings Response:', response.data);
+      const bookingsData = Array.isArray(response.data) ? response.data : (response.data.data || []);
+      setBookings(bookingsData);
     } catch (error) {
-      console.error('Load bookings error:', error);
+      console.error('❌ Load bookings error:', error);
     } finally {
       setLoading(false);
     }
@@ -31,15 +33,25 @@ export default function BookingsScreen({ navigation }) {
   const renderBooking = ({ item }) => (
     <Card style={styles.bookingCard}>
       <View style={styles.bookingHeader}>
-        <Text style={styles.bookingId}>#{item.id}</Text>
+        <Text style={styles.bookingId}>#{item.booking_number || item.id}</Text>
         <Text style={[styles.status, styles[item.booking_status]]}>{item.booking_status}</Text>
       </View>
       <Text style={styles.turfName}>{item.turf?.name}</Text>
-      <Text style={styles.playerName}>{item.player?.name} • {item.player?.phone}</Text>
-      <Text style={styles.bookingDate}>{item.booking_date} • {item.slot_time}</Text>
+      <Text style={styles.playerName}>{item.player_name} • {item.player_phone}</Text>
+      <Text style={styles.bookingDate}>
+        {new Date(item.booking_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+      </Text>
+      <Text style={styles.bookingSlots}>
+        {item.start_time && new Date('2000-01-01 ' + item.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} - {item.end_time && new Date('2000-01-01 ' + item.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} ({item.slot_duration} min)
+      </Text>
       <View style={styles.bookingFooter}>
-        <Text style={styles.amount}>₹{item.amount}</Text>
-        <Text style={styles.paymentMethod}>{item.payment_method}</Text>
+        <Text style={styles.amount}>₹{item.final_amount || item.amount}</Text>
+        <View style={styles.badges}>
+          <Text style={styles.bookingType}>{item.booking_type}</Text>
+          <Text style={[styles.paymentStatus, styles[`payment_${item.payment_status}`]]}>
+            {item.payment_status}
+          </Text>
+        </View>
       </View>
     </Card>
   );
@@ -69,13 +81,25 @@ export default function BookingsScreen({ navigation }) {
         ))}
       </View>
 
-      <FlatList
-        data={bookings}
-        renderItem={renderBooking}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadBookings} />}
-      />
+      {bookings.length === 0 && !loading ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyIcon}>📋</Text>
+          <Text style={styles.emptyTitle}>No Bookings Found</Text>
+          <Text style={styles.emptyText}>
+            {filter === 'all' 
+              ? 'You don\'t have any bookings yet'
+              : `No ${filter} bookings found`}
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={bookings}
+          renderItem={renderBooking}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={loading} onRefresh={loadBookings} />}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -173,22 +197,76 @@ const styles = StyleSheet.create({
   },
   bookingDate: {
     ...FONTS.caption,
+    color: COLORS.textSecondary,
+    marginBottom: 2,
+  },
+  bookingSlots: {
+    ...FONTS.caption,
     color: COLORS.text,
+    fontWeight: '500',
     marginBottom: SIZES.sm,
   },
   bookingFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: SIZES.xs,
   },
   amount: {
     ...FONTS.body,
     fontWeight: '600',
     color: COLORS.primary,
   },
-  paymentMethod: {
-    ...FONTS.caption,
-    color: COLORS.textSecondary,
+  badges: {
+    flexDirection: 'row',
+    gap: SIZES.xs,
+  },
+  bookingType: {
+    ...FONTS.small,
+    paddingHorizontal: SIZES.sm,
+    paddingVertical: 2,
+    borderRadius: SIZES.xs,
+    backgroundColor: '#F3F4F6',
+    color: '#374151',
     textTransform: 'capitalize',
+  },
+  paymentStatus: {
+    ...FONTS.small,
+    paddingHorizontal: SIZES.sm,
+    paddingVertical: 2,
+    borderRadius: SIZES.xs,
+    textTransform: 'capitalize',
+  },
+  payment_success: {
+    backgroundColor: '#D1FAE5',
+    color: '#065F46',
+  },
+  payment_pending: {
+    backgroundColor: '#FEF3C7',
+    color: '#92400E',
+  },
+  payment_failed: {
+    backgroundColor: '#FEE2E2',
+    color: '#991B1B',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SIZES.xl,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: SIZES.md,
+  },
+  emptyTitle: {
+    ...FONTS.h3,
+    color: COLORS.text,
+    marginBottom: SIZES.sm,
+  },
+  emptyText: {
+    ...FONTS.body,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
 });

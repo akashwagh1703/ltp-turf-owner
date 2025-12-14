@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../../components/common/Card';
 import { payoutService } from '../../services/payoutService';
@@ -21,7 +21,9 @@ export default function PayoutsScreen() {
       const payoutsData = Array.isArray(response.data) ? response.data : (response.data.data || []);
       setPayouts(payoutsData);
     } catch (error) {
-      console.error('❌ Load payouts error:', error);
+      console.error('❌ Load payouts error:', error.response?.data || error.message);
+      Alert.alert('Error', 'Failed to load payouts. Please check your connection.');
+      setPayouts([]);
     } finally {
       setLoading(false);
     }

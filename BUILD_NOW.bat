@@ -1,27 +1,23 @@
 @echo off
 echo ========================================
-echo Building LTP Turf Owner APK
+echo LTP Turf Owner - Fixed Version
 echo ========================================
 echo.
-echo Logged in as: akashwagh
+echo Step 1: Cleaning previous installation...
+rmdir /s /q node_modules 2>nul
+del package-lock.json 2>nul
 echo.
-echo Step 1: Initializing project...
-echo Press Y when prompted
+echo Step 2: Installing compatible dependencies...
+npm install --legacy-peer-deps
 echo.
-call eas init
+echo Step 3: Starting development server...
+npx expo start --clear
 echo.
-echo Step 2: Building APK...
-echo This will take 5-10 minutes
+echo Instructions:
+echo 1. Install Expo Go app on your phone
+echo 2. Scan QR code with Expo Go
+echo 3. App should load with full navigation
 echo.
-call eas build -p android --profile preview
-echo.
-echo ========================================
-echo Build Started!
-echo ========================================
-echo.
-echo Check progress at:
-echo https://expo.dev/accounts/akashwagh/projects
-echo.
-echo You'll get a download link when done.
+echo Login: Any 10-digit phone + OTP: 999999
 echo.
 pause

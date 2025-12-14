@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../../components/common/Card';
 import { turfService } from '../../services/turfService';
@@ -18,12 +18,13 @@ export default function TurfsScreen({ navigation }) {
     try {
       const response = await turfService.getTurfs();
       console.log('📊 Turfs Response:', response.data);
-      // Handle both direct array and wrapped data
       const turfsData = Array.isArray(response.data) ? response.data : (response.data.data || []);
       console.log('📊 Turfs Data:', turfsData);
       setTurfs(turfsData);
     } catch (error) {
-      console.error('❌ Load turfs error:', error);
+      console.error('❌ Load turfs error:', error.response?.data || error.message);
+      Alert.alert('Error', 'Failed to load turfs. Please check your connection.');
+      setTurfs([]);
     } finally {
       setLoading(false);
     }

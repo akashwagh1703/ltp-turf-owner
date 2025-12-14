@@ -7,7 +7,7 @@ import Card from '../../components/common/Card';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../constants/theme';
 
 export default function ProfileScreen() {
-  const { owner, logout } = useAuth();
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
     Alert.alert(
@@ -44,9 +44,9 @@ export default function ProfileScreen() {
               <Ionicons name="person" size={40} color={COLORS.primary} />
             </View>
           </View>
-          <Text style={styles.name}>{owner?.name || 'Turf Owner'}</Text>
-          <Text style={styles.phone}>{owner?.phone || 'N/A'}</Text>
-          <Text style={styles.email}>{owner?.email || 'No email'}</Text>
+          <Text style={styles.name}>{user?.name || 'Turf Owner'}</Text>
+          <Text style={styles.phone}>{user?.phone || 'N/A'}</Text>
+          <Text style={styles.email}>{user?.email || 'No email'}</Text>
         </Card>
 
         <View style={styles.section}>

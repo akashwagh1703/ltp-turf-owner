@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
@@ -24,7 +24,9 @@ export default function BookingsScreen({ navigation }) {
       const bookingsData = Array.isArray(response.data) ? response.data : (response.data.data || []);
       setBookings(bookingsData);
     } catch (error) {
-      console.error('❌ Load bookings error:', error);
+      console.error('❌ Load bookings error:', error.response?.data || error.message);
+      Alert.alert('Error', 'Failed to load bookings. Please check your connection.');
+      setBookings([]);
     } finally {
       setLoading(false);
     }

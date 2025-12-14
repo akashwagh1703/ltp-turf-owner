@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Load user error:', error);
+      // Don't crash the app, just continue without user
     } finally {
       setLoading(false);
     }

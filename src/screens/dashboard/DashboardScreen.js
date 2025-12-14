@@ -9,7 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../constants/theme';
 
 export default function DashboardScreen({ navigation }) {
-  const { owner } = useAuth();
+  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -46,7 +46,7 @@ export default function DashboardScreen({ navigation }) {
       >
         <View style={styles.headerContainer}>
           <LinearGradient
-            colors={['#0EA5E9', '#0284C7', '#0369A1']}
+            colors={['#10B981', '#059669', '#047857']}
             style={styles.header}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -54,11 +54,11 @@ export default function DashboardScreen({ navigation }) {
             <View style={styles.headerContent}>
               <View style={styles.headerLeft}>
                 <View style={styles.avatarContainer}>
-                  <Text style={styles.avatarText}>{(owner?.name || 'O')[0].toUpperCase()}</Text>
+                  <Text style={styles.avatarText}>{(user?.name || 'O')[0].toUpperCase()}</Text>
                 </View>
                 <View>
                   <Text style={styles.greeting}>Welcome back 👋</Text>
-                  <Text style={styles.ownerName}>{owner?.name || 'Owner'}</Text>
+                  <Text style={styles.ownerName}>{user?.name || 'Owner'}</Text>
                 </View>
               </View>
               <TouchableOpacity style={styles.notificationBtn} activeOpacity={0.7}>

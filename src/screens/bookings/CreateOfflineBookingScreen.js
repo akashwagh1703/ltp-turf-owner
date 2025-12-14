@@ -43,11 +43,12 @@ export default function CreateOfflineBookingScreen({ navigation }) {
     try {
       const response = await turfService.getTurfs();
       const turfsData = Array.isArray(response.data) ? response.data : (response.data.data || []);
-      // Filter out suspended turfs
       const activeTurfs = turfsData.filter(turf => turf.status !== 'suspended');
       setTurfs(activeTurfs);
     } catch (error) {
-      console.error('❌ Load turfs error:', error);
+      console.error('❌ Load turfs error:', error.response?.data || error.message);
+      Alert.alert('Error', 'Failed to load turfs for booking.');
+      setTurfs([]);
     }
   };
 
@@ -429,11 +430,6 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: SIZES.xs,
     fontWeight: '600',
-  },
-  sectionTitle: {
-    ...FONTS.h3,
-    color: COLORS.text,
-    marginBottom: SIZES.md,
   },
   turfOption: {
     flexDirection: 'row',

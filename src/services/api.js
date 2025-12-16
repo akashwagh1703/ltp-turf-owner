@@ -26,7 +26,10 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
-    console.log('❌ API Error:', error.config?.method?.toUpperCase(), error.config?.url, error.response?.status, error.response?.data || error.message);
+    // Only log in development, don't show red box errors
+    if (__DEV__ && error.response?.status !== 400) {
+      console.log('❌ API Error:', error.config?.method?.toUpperCase(), error.config?.url, error.response?.status);
+    }
     if (error.response?.status === 401) {
       await AsyncStorage.removeItem('token');
       await AsyncStorage.removeItem('user');

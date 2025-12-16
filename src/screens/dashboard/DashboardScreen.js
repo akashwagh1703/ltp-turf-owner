@@ -46,10 +46,10 @@ export default function DashboardScreen({ navigation }) {
       >
         <View style={styles.headerContainer}>
           <LinearGradient
-            colors={['#10B981', '#059669', '#047857']}
+            colors={['#10B981', '#059669']}
             style={styles.header}
             start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            end={{ x: 1, y: 0 }}
           >
             <View style={styles.headerContent}>
               <View style={styles.headerLeft}>
@@ -57,13 +57,12 @@ export default function DashboardScreen({ navigation }) {
                   <Text style={styles.avatarText}>{(user?.name || 'O')[0].toUpperCase()}</Text>
                 </View>
                 <View>
-                  <Text style={styles.greeting}>Welcome back 👋</Text>
-                  <Text style={styles.ownerName}>{user?.name || 'Owner'}</Text>
+                  <Text style={styles.greeting}>Hi, {user?.name || 'Owner'} 👋</Text>
                 </View>
               </View>
               <TouchableOpacity style={styles.notificationBtn} activeOpacity={0.7}>
                 <View style={styles.notificationBadge} />
-                <Ionicons name="notifications" size={24} color="#FFF" />
+                <Ionicons name="notifications-outline" size={22} color="#FFF" />
               </TouchableOpacity>
             </View>
           </LinearGradient>
@@ -81,16 +80,6 @@ export default function DashboardScreen({ navigation }) {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.statCard} onPress={() => navigation.navigate('Bookings')} activeOpacity={0.85}>
-              <View style={[styles.statIconCircle, { backgroundColor: '#DBEAFE' }]}>
-                <Ionicons name="calendar" size={26} color="#2563EB" />
-              </View>
-              <View style={styles.statContent}>
-                <Text style={styles.statValue}>{stats?.total_bookings || 0}</Text>
-                <Text style={styles.statLabel}>Total Bookings</Text>
-              </View>
-            </TouchableOpacity>
-
             <TouchableOpacity style={styles.statCard} activeOpacity={0.85}>
               <View style={[styles.statIconCircle, { backgroundColor: '#FEF3C7' }]}>
                 <Ionicons name="today" size={26} color="#D97706" />
@@ -102,14 +91,83 @@ export default function DashboardScreen({ navigation }) {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.statCard} onPress={() => navigation.navigate('Payouts')} activeOpacity={0.85}>
-              <View style={[styles.statIconCircle, { backgroundColor: '#E9D5FF' }]}>
-                <Ionicons name="wallet" size={26} color="#7C3AED" />
+              <View style={[styles.statIconCircle, { backgroundColor: '#D1FAE5' }]}>
+                <Ionicons name="wallet" size={26} color="#059669" />
               </View>
               <View style={styles.statContent}>
-                <Text style={styles.statValue}>₹{stats?.total_revenue || '0'}</Text>
-                <Text style={styles.statLabel}>Revenue</Text>
+                <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>₹{parseFloat(stats?.total_revenue || 0).toFixed(2)}</Text>
+                <Text style={styles.statLabel}>Total Revenue</Text>
               </View>
             </TouchableOpacity>
+
+            <TouchableOpacity style={styles.statCard} activeOpacity={0.85}>
+              <View style={[styles.statIconCircle, { backgroundColor: '#FEE2E2' }]}>
+                <Ionicons name="hourglass" size={26} color="#DC2626" />
+              </View>
+              <View style={styles.statContent}>
+                <Text style={styles.statValue}>{stats?.pending_bookings || 0}</Text>
+                <Text style={styles.statLabel}>Pending</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.bookingTypeCards}>
+            <View style={styles.bookingTypeCard}>
+              <View style={styles.bookingTypeHeader}>
+                <View style={[styles.bookingTypeIcon, { backgroundColor: '#DBEAFE' }]}>
+                  <Ionicons name="globe-outline" size={20} color="#1D4ED8" />
+                </View>
+                <Text style={styles.bookingTypeTitle}>Online Bookings</Text>
+              </View>
+              <View style={styles.bookingTypeStats}>
+                <View style={styles.bookingTypeStat}>
+                  <Text style={styles.bookingTypeValue}>{stats?.online_bookings || 0}</Text>
+                  <Text style={styles.bookingTypeLabel}>Count</Text>
+                </View>
+                <View style={styles.bookingTypeDivider} />
+                <View style={styles.bookingTypeStat}>
+                  <Text style={[styles.bookingTypeValue, { color: '#059669' }]}>₹{stats?.online_revenue || '0'}</Text>
+                  <Text style={styles.bookingTypeLabel}>Revenue</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.bookingTypeCard}>
+              <View style={styles.bookingTypeHeader}>
+                <View style={[styles.bookingTypeIcon, { backgroundColor: '#FEF3C7' }]}>
+                  <Ionicons name="cash-outline" size={20} color="#B45309" />
+                </View>
+                <Text style={styles.bookingTypeTitle}>Offline Bookings</Text>
+              </View>
+              <View style={styles.bookingTypeStats}>
+                <View style={styles.bookingTypeStat}>
+                  <Text style={styles.bookingTypeValue}>{stats?.offline_bookings || 0}</Text>
+                  <Text style={styles.bookingTypeLabel}>Count</Text>
+                </View>
+                <View style={styles.bookingTypeDivider} />
+                <View style={styles.bookingTypeStat}>
+                  <Text style={[styles.bookingTypeValue, { color: '#059669' }]}>₹{stats?.offline_revenue || '0'}</Text>
+                  <Text style={styles.bookingTypeLabel}>Revenue</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.paymentCards}>
+            <View style={[styles.paymentCard, { backgroundColor: '#D1FAE5' }]}>
+              <Ionicons name="checkmark-circle" size={24} color="#047857" />
+              <View style={styles.paymentContent}>
+                <Text style={styles.paymentValue}>₹{stats?.paid_amount || '0'}</Text>
+                <Text style={styles.paymentLabel}>Paid</Text>
+              </View>
+            </View>
+            <View style={[styles.paymentCard, { backgroundColor: '#FEF3C7' }]}>
+              <Ionicons name="time" size={24} color="#B45309" />
+              <View style={styles.paymentContent}>
+                <Text style={styles.paymentValue}>₹{stats?.pending_amount || '0'}</Text>
+                <Text style={styles.paymentLabel}>Pending</Text>
+              </View>
+            </View>
           </View>
         </View>
 
@@ -175,14 +233,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   headerContainer: {
-    marginBottom: -40,
+    marginBottom: -20,
   },
   header: {
-    paddingTop: SIZES.lg,
-    paddingHorizontal: SIZES.xl,
-    paddingBottom: 60,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    paddingTop: SIZES.sm,
+    paddingHorizontal: SIZES.lg,
+    paddingBottom: 35,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   headerContent: {
     flexDirection: 'row',
@@ -195,52 +253,43 @@ const styles = StyleSheet.create({
     gap: SIZES.md,
   },
   avatarContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.4)',
   },
   avatarText: {
-    ...FONTS.h2,
+    ...FONTS.body,
     color: '#FFF',
     fontWeight: '700',
   },
   greeting: {
     ...FONTS.caption,
-    color: 'rgba(255,255,255,0.9)',
-    marginBottom: 2,
-  },
-  ownerName: {
-    ...FONTS.h3,
     color: '#FFF',
-    fontWeight: '700',
+    fontWeight: '600',
   },
   notificationBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   notificationBadge: {
     position: 'absolute',
-    top: 10,
-    right: 10,
+    top: 8,
+    right: 8,
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: '#EF4444',
-    borderWidth: 1.5,
-    borderColor: '#FFF',
   },
   statsContainer: {
     paddingHorizontal: SIZES.lg,
-    marginTop: 50,
+    marginTop: 30,
     marginBottom: SIZES.md,
   },
   statsGrid: {
@@ -277,6 +326,87 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     ...FONTS.tiny,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  bookingTypeCards: {
+    marginTop: SIZES.lg,
+    gap: SIZES.md,
+  },
+  bookingTypeCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: SIZES.lg,
+    ...SHADOWS.medium,
+    elevation: 3,
+  },
+  bookingTypeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SIZES.sm,
+    marginBottom: SIZES.md,
+  },
+  bookingTypeIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bookingTypeTitle: {
+    ...FONTS.bodyMedium,
+    color: '#0F172A',
+    fontWeight: '600',
+  },
+  bookingTypeStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  bookingTypeStat: {
+    flex: 1,
+  },
+  bookingTypeDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: SIZES.md,
+  },
+  bookingTypeValue: {
+    ...FONTS.h2,
+    color: '#0F172A',
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  bookingTypeLabel: {
+    ...FONTS.caption,
+    color: '#64748B',
+  },
+  paymentCards: {
+    flexDirection: 'row',
+    gap: SIZES.md,
+    marginTop: SIZES.lg,
+  },
+  paymentCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SIZES.sm,
+    padding: SIZES.lg,
+    borderRadius: 16,
+    ...SHADOWS.medium,
+    elevation: 2,
+  },
+  paymentContent: {
+    flex: 1,
+  },
+  paymentValue: {
+    ...FONTS.h3,
+    color: '#0F172A',
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  paymentLabel: {
+    ...FONTS.caption,
     color: '#64748B',
     fontWeight: '500',
   },
@@ -431,5 +561,11 @@ const styles = StyleSheet.create({
   },
   statusText_cancelled: {
     color: '#DC2626',
+  },
+  status_no_show: {
+    backgroundColor: '#FEF3C7',
+  },
+  statusText_no_show: {
+    color: '#B45309',
   },
 });

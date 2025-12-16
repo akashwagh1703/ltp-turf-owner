@@ -101,6 +101,18 @@ export default function CreateOfflineBookingScreen({ navigation }) {
           const timeB = b.start_time || b.slot_time || '';
           return timeA.localeCompare(timeB);
         });
+        
+        // Filter out past slots for current date
+        const today = new Date().toISOString().split('T')[0];
+        if (formData.booking_date === today) {
+          const currentTime = new Date().toTimeString().slice(0, 5); // HH:MM format
+          slotsData = slotsData.filter(slot => {
+            const slotTime = slot.start_time || slot.slot_time || '';
+            return slotTime > currentTime;
+          });
+          console.log('⏰ Filtered past slots. Remaining:', slotsData.length);
+        }
+        
         console.log('✅ Final slots to display:', slotsData.length);
       }
       
@@ -117,16 +129,26 @@ export default function CreateOfflineBookingScreen({ navigation }) {
   const handleSlotSelect = (slot) => {
     if (slot.is_booked) return;
 
+    console.log('🎯 Slot selected:', {
+      id: slot.id,
+      start_time: slot.start_time,
+      price: slot.price,
+      turf_uniform_price: selectedTurf?.uniform_price
+    });
+
     const slotIndex = slots.findIndex(s => s.id === slot.id);
     const isSelected = selectedSlots.some(s => s.id === slot.id);
 
     if (isSelected) {
       // Deselect slot
-      setSelectedSlots(selectedSlots.filter(s => s.id !== slot.id));
+      const newSelectedSlots = selectedSlots.filter(s => s.id !== slot.id);
+      setSelectedSlots(newSelectedSlots);
+      console.log('💰 Total after deselect:', calculateTotalAmount());
     } else {
       // Check if slot is consecutive
       if (selectedSlots.length === 0) {
         setSelectedSlots([slot]);
+        console.log('💰 First slot selected, price:', slot.price || selectedTurf?.uniform_price);
       } else {
         const selectedIndices = selectedSlots.map(s => slots.findIndex(sl => sl.id === s.id));
         const minIndex = Math.min(...selectedIndices);
@@ -140,7 +162,9 @@ export default function CreateOfflineBookingScreen({ navigation }) {
           const allAvailable = slots.slice(newMin, newMax + 1).every(s => !s.is_booked);
           
           if (allAvailable) {
-            setSelectedSlots([...selectedSlots, slot]);
+            const newSelectedSlots = [...selectedSlots, slot];
+            setSelectedSlots(newSelectedSlots);
+            console.log('💰 Total after select:', calculateTotalAmount());
           } else {
             Alert.alert('Error', 'Cannot select non-consecutive slots or skip booked slots');
           }
@@ -153,8 +177,12 @@ export default function CreateOfflineBookingScreen({ navigation }) {
 
   const calculateTotalAmount = () => {
     if (selectedSlots.length === 0) return 0;
-    const pricePerSlot = parseFloat(selectedTurf?.uniform_price || 0);
-    return (pricePerSlot * selectedSlots.length).toFixed(2);
+    // Sum up individual slot prices if available, otherwise use uniform price
+    const totalPrice = selectedSlots.reduce((sum, slot) => {
+      const slotPrice = parseFloat(slot.price || selectedTurf?.uniform_price || 0);
+      return sum + slotPrice;
+    }, 0);
+    return totalPrice.toFixed(2);
   };
 
   const handleSubmit = async () => {
@@ -190,14 +218,49 @@ export default function CreateOfflineBookingScreen({ navigation }) {
         payment_method: formData.payment_method,
       };
       
-      console.log('📤 Booking Data:', bookingData);
-      await bookingService.createOfflineBooking(bookingData);
+      console.log('📤 Booking Data:', JSON.stringify(bookingData, null, 2));
+      const response = await bookingService.createOfflineBooking(bookingData);
+      console.log('✅ Booking created:', response.data);
       Alert.alert('Success', 'Offline booking created successfully', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     } catch (error) {
-      console.error('❌ Booking error:', error);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to create booking');
+      // Log for debugging only (not shown to user)
+      if (__DEV__) {
+        console.log('❌ Booking error:', error.response?.status, error.response?.data);
+      }
+      
+      // Reload slots to refresh availability
+      await loadSlots();
+      
+      // Determine user-friendly error message
+      let errorTitle = 'Booking Failed';
+      let errorMessage = 'Unable to create booking. Please try again.';
+      
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data;
+        
+        if (status === 400) {
+          if (data.message?.includes('not available') || data.message?.includes('already')) {
+            errorMessage = 'Selected time slots are no longer available. Please choose different slots.';
+          } else if (data.errors) {
+            errorMessage = 'Please check all booking details and try again.';
+          } else {
+            errorMessage = 'Selected slots are unavailable. Please select again.';
+          }
+        } else if (status === 422) {
+          errorMessage = 'Invalid booking information. Please check all fields.';
+        } else if (status === 500) {
+          errorMessage = 'Server error. Please try again in a moment.';
+        } else if (status === 401 || status === 403) {
+          errorMessage = 'Session expired. Please login again.';
+        }
+      } else if (error.request) {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      
+      Alert.alert(errorTitle, errorMessage, [{ text: 'OK' }]);
     } finally {
       setLoading(false);
     }
@@ -369,7 +432,7 @@ export default function CreateOfflineBookingScreen({ navigation }) {
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Time</Text>
                 <Text style={styles.summaryValue}>
-                  {selectedSlots[0].start_time_display} - {selectedSlots[selectedSlots.length - 1].end_time_display}
+                  {selectedSlots[0].start_time_display || selectedSlots[0].start_time} - {selectedSlots[selectedSlots.length - 1].end_time_display || selectedSlots[selectedSlots.length - 1].end_time}
                 </Text>
               </View>
               <View style={styles.summaryRow}>

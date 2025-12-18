@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/common/Card';
+import Header from '../../components/common/Header';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../constants/theme';
 
 export default function ProfileScreen() {
@@ -34,9 +35,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        <View style={styles.header}>
-          <Text style={styles.title}>Profile</Text>
-        </View>
+        <Header title="Profile" />
 
         <Card style={styles.profileCard}>
           <View style={styles.avatarContainer}>
@@ -81,13 +80,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-  },
-  header: {
-    padding: SIZES.lg,
-  },
-  title: {
-    ...FONTS.h1,
-    color: COLORS.text,
   },
   profileCard: {
     margin: SIZES.lg,

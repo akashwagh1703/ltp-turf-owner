@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../../components/common/Card';
+import Header from '../../components/common/Header';
 import { turfService } from '../../services/turfService';
 import { COLORS, SIZES, FONTS } from '../../constants/theme';
 
@@ -48,10 +49,7 @@ export default function TurfsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>My Turfs</Text>
-        <Text style={styles.subtitle}>Total: {turfs.length}</Text>
-      </View>
+      <Header title="My Turfs" subtitle={`Total: ${turfs.length}`} />
       {turfs.length === 0 && !loading ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>No turfs found</Text>
@@ -74,18 +72,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-  },
-  header: {
-    padding: SIZES.lg,
-  },
-  title: {
-    ...FONTS.h1,
-    color: COLORS.text,
-  },
-  subtitle: {
-    ...FONTS.caption,
-    color: COLORS.textSecondary,
-    marginTop: SIZES.xs,
   },
   emptyState: {
     flex: 1,

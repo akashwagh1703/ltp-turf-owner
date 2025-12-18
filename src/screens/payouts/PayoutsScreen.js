@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../../components/common/Card';
+import Header from '../../components/common/Header';
 import { payoutService } from '../../services/payoutService';
 import { COLORS, SIZES, FONTS } from '../../constants/theme';
 
@@ -80,8 +81,8 @@ export default function PayoutsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Payouts</Text>
+      <View style={styles.headerWrapper}>
+        <Header title="Payouts" />
       </View>
       {unpaidSummary && unpaidSummary.total_bookings > 0 && (
         <Card style={styles.unpaidCard}>
@@ -130,12 +131,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
-    padding: SIZES.lg,
-  },
-  title: {
-    ...FONTS.h1,
-    color: COLORS.text,
+  headerWrapper: {
+    backgroundColor: '#FFF',
   },
   list: {
     padding: SIZES.lg,

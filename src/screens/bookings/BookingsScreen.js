@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
+import Header from '../../components/common/Header';
 import { bookingService } from '../../services/bookingService';
 import { COLORS, SIZES, FONTS } from '../../constants/theme';
 
@@ -248,12 +249,16 @@ export default function BookingsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Bookings</Text>
-        <Button
-          title="+ Offline"
-          onPress={() => navigation.navigate('CreateOfflineBooking')}
-          style={styles.addButton}
+      <View style={styles.headerWrapper}>
+        <Header 
+          title="Bookings" 
+          rightComponent={
+            <Button
+              title="+ Offline"
+              onPress={() => navigation.navigate('CreateOfflineBooking')}
+              style={styles.addButton}
+            />
+          }
         />
       </View>
 
@@ -381,19 +386,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: SIZES.lg,
-  },
-  title: {
-    ...FONTS.h1,
-    color: COLORS.text,
+  headerWrapper: {
+    backgroundColor: '#FFF',
   },
   addButton: {
-    paddingVertical: SIZES.sm,
-    paddingHorizontal: SIZES.md,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    minWidth: 80,
   },
   filterBar: {
     flexDirection: 'row',

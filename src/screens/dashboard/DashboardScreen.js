@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import Card from '../../components/common/Card';
+import Header from '../../components/common/Header';
 import { dashboardService } from '../../services/dashboardService';
 import { useAuth } from '../../contexts/AuthContext';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../constants/theme';
 
 export default function DashboardScreen({ navigation }) {
-  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -39,35 +38,13 @@ export default function DashboardScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <Header showAvatar showNotification />
       <ScrollView
         refreshControl={<RefreshControl refreshing={loading} onRefresh={loadData} />}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
       >
-        <View style={styles.headerContainer}>
-          <LinearGradient
-            colors={['#10B981', '#059669']}
-            style={styles.header}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <View style={styles.headerContent}>
-              <View style={styles.headerLeft}>
-                <View style={styles.avatarContainer}>
-                  <Text style={styles.avatarText}>{(user?.name || 'O')[0].toUpperCase()}</Text>
-                </View>
-                <View>
-                  <Text style={styles.greeting}>Hi, {user?.name || 'Owner'} 👋</Text>
-                </View>
-              </View>
-              <TouchableOpacity style={styles.notificationBtn} activeOpacity={0.7}>
-                <View style={styles.notificationBadge} />
-                <Ionicons name="notifications-outline" size={22} color="#FFF" />
-              </TouchableOpacity>
-            </View>
-          </LinearGradient>
-        </View>
-
         <View style={styles.statsContainer}>
           <View style={styles.statsGrid}>
             <TouchableOpacity style={styles.statCard} onPress={() => navigation.navigate('Turfs')} activeOpacity={0.85}>
@@ -230,67 +207,18 @@ export default function DashboardScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#10B981',
+  },
+  scrollContent: {
     backgroundColor: '#F8FAFC',
-  },
-  headerContainer: {
-    marginBottom: -20,
-  },
-  header: {
-    paddingTop: SIZES.sm,
-    paddingHorizontal: SIZES.lg,
-    paddingBottom: 35,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SIZES.md,
-  },
-  avatarContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    ...FONTS.body,
-    color: '#FFF',
-    fontWeight: '700',
-  },
-  greeting: {
-    ...FONTS.caption,
-    color: '#FFF',
-    fontWeight: '600',
-  },
-  notificationBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#EF4444',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    marginTop: -20,
   },
   statsContainer: {
     paddingHorizontal: SIZES.lg,
-    marginTop: 30,
-    marginBottom: SIZES.md,
+    paddingTop: SIZES.xl,
+    paddingBottom: SIZES.md,
   },
   statsGrid: {
     flexDirection: 'row',

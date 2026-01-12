@@ -1,22 +1,12 @@
 {
   "expo": {
-    "name": "LTP Turf Owner",
-    "slug": "ltp-turf-owner",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "backgroundColor": "#10B981"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.ltp.turfowner"
+    "extra": {
+      "eas": {
+        "projectId": "58b6027a-25fd-4e8f-93f9-00fa1117e136"
+      }
     },
     "android": {
-      "package": "com.ltp.turfowner"
+      "package": "com.playltp.ltpturfowner"
     }
   }
 }

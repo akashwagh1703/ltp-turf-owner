@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import { turfService } from '../../services/turfService';
 import { COLORS, SIZES, FONTS } from '../../constants/theme';
+import { BASE_URL } from '../../constants/config';
+
+const { width } = Dimensions.get('window');
 
 export default function TurfDetailScreen({ route, navigation }) {
   const { id } = route.params;
@@ -22,6 +25,7 @@ export default function TurfDetailScreen({ route, navigation }) {
       const response = await turfService.getTurf(id);
       const turfData = response.data.data || response.data;
       console.log('📊 Turf Detail:', turfData);
+      console.log('🖼️ Turf Images:', JSON.stringify(turfData.images, null, 2));
       setTurf(turfData);
     } catch (error) {
       console.error('❌ Load turf error:', error);
@@ -116,7 +120,33 @@ export default function TurfDetailScreen({ route, navigation }) {
         {turf.images && turf.images.length > 0 && (
           <Card style={styles.card}>
             <Text style={styles.sectionTitle}>Images ({turf.images.length})</Text>
-            <Text style={styles.infoText}>Images are managed by admin</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagesScroll}>
+              {turf.images.map((image, index) => {
+                let imageUrl = image.image_url || image.url || image;
+                
+                // If URL doesn't start with http, construct full URL
+                if (imageUrl && !imageUrl.startsWith('http')) {
+                  imageUrl = `${BASE_URL}/storage/${image.image_path || imageUrl}`;
+                }
+                
+                console.log(`🖼️ Image ${index}:`, imageUrl);
+                
+                return (
+                  <View key={index} style={styles.imageContainer}>
+                    <Image
+                      source={{ uri: imageUrl }}
+                      style={styles.image}
+                      resizeMode="cover"
+                      onError={(e) => console.log(`❌ Image ${index} load error:`, imageUrl, e.nativeEvent.error)}
+                      onLoad={() => console.log(`✅ Image ${index} loaded:`, imageUrl)}
+                    />
+                    <View style={styles.imagePlaceholder}>
+                      <Ionicons name="image-outline" size={40} color={COLORS.textSecondary} />
+                    </View>
+                  </View>
+                );
+              })}
+            </ScrollView>
           </Card>
         )}
 
@@ -243,5 +273,30 @@ const styles = StyleSheet.create({
   },
   updateButton: {
     margin: SIZES.lg,
+  },
+  imagesScroll: {
+    marginHorizontal: -SIZES.md,
+  },
+  imageContainer: {
+    marginRight: SIZES.md,
+    borderRadius: SIZES.md,
+    overflow: 'hidden',
+    backgroundColor: COLORS.border,
+    position: 'relative',
+  },
+  image: {
+    width: width * 0.7,
+    height: 200,
+    borderRadius: SIZES.md,
+  },
+  imagePlaceholder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: -1,
   },
 });

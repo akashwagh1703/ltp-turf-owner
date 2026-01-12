@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "LTP Turf Owner",
+    "slug": "ltp-turf-owner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#10B981"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ltp.turfowner"
+    },
+    "android": {
+      "package": "com.ltp.turfowner",
+      "usesCleartextTraffic": true,
+      "networkSecurityConfig": "./android/app/src/main/res/xml/network_security_config.xml"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f74f0914-7605-4369-8914-9994d3d25e32"
+      }
+    }
+  }
+}

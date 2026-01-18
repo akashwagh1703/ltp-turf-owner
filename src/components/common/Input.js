@@ -8,7 +8,7 @@ export default function Input({ label, error, style, ...props }) {
       {label && <Text style={styles.label}>{label}</Text>}
       <TextInput
         style={[styles.input, error && styles.inputError]}
-        placeholderTextColor={COLORS.textSecondary}
+        placeholderTextColor={COLORS.gray[400]}
         {...props}
       />
       {error && <Text style={styles.error}>{error}</Text>}
@@ -22,26 +22,27 @@ const styles = StyleSheet.create({
   },
   label: {
     ...FONTS.caption,
-    color: COLORS.text,
+    color: COLORS.gray[900],
     marginBottom: SIZES.xs,
     fontWeight: '500',
   },
   input: {
-    backgroundColor: COLORS.card,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: SIZES.radius,
+    borderColor: COLORS.gray[200],
+    borderRadius: 12,
     paddingHorizontal: SIZES.md,
     paddingVertical: SIZES.sm + 4,
     ...FONTS.body,
-    color: COLORS.text,
+    color: COLORS.gray[900],
+    minHeight: 48,
   },
   inputError: {
-    borderColor: COLORS.error,
+    borderColor: COLORS.error[500],
   },
   error: {
     ...FONTS.small,
-    color: COLORS.error,
+    color: COLORS.error[600],
     marginTop: SIZES.xs,
   },
 });

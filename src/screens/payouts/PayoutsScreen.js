@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import Card from '../../components/common/Card';
-import Header from '../../components/common/Header';
 import { payoutService } from '../../services/payoutService';
-import { COLORS, SIZES, FONTS } from '../../constants/theme';
+import { COLORS, SIZES, FONTS, GRADIENTS, SHADOWS } from '../../constants/theme';
 
 export default function PayoutsScreen() {
   const [payouts, setPayouts] = useState([]);
@@ -49,7 +50,7 @@ export default function PayoutsScreen() {
   };
 
   const renderPayout = ({ item }) => (
-    <Card style={styles.payoutCard}>
+    <View style={[styles.payoutCard, SHADOWS.medium]}>
       <View style={styles.payoutHeader}>
         <Text style={styles.payoutId}>{item.payout_number || `Payout #${item.id}`}</Text>
         <Text style={[styles.status, styles[item.status]]}>{item.status}</Text>
@@ -76,16 +77,24 @@ export default function PayoutsScreen() {
       {item.paid_date && (
         <Text style={styles.paidDate}>Paid on {new Date(item.paid_date).toLocaleDateString()}</Text>
       )}
-    </Card>
+    </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.headerWrapper}>
-        <Header title="Payouts" />
-      </View>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <LinearGradient colors={GRADIENTS.primary} style={styles.header}>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.headerTitle}>Payouts</Text>
+            <Text style={styles.headerSubtitle}>Track your earnings</Text>
+          </View>
+          <View style={styles.iconContainer}>
+            <Ionicons name="wallet" size={32} color="rgba(255,255,255,0.9)" />
+          </View>
+        </View>
+      </LinearGradient>
       {unpaidSummary && unpaidSummary.total_bookings > 0 && (
-        <Card style={styles.unpaidCard}>
+        <View style={[styles.unpaidCard, SHADOWS.medium]}>
           <Text style={styles.unpaidTitle}>⏳ Pending Payout</Text>
           <Text style={styles.unpaidSubtitle}>
             {unpaidSummary.total_bookings} completed online booking{unpaidSummary.total_bookings > 1 ? 's' : ''} awaiting payout generation by admin
@@ -104,7 +113,7 @@ export default function PayoutsScreen() {
               <Text style={styles.netAmount}>₹{unpaidSummary.payout_amount}</Text>
             </View>
           </View>
-        </Card>
+        </View>
       )}
       <FlatList
         data={payouts}
@@ -131,8 +140,33 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  headerWrapper: {
-    backgroundColor: '#FFF',
+  header: {
+    paddingHorizontal: SIZES.xl,
+    paddingVertical: SIZES.xl,
+    paddingBottom: SIZES.lg,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    ...FONTS.h1,
+    color: '#FFF',
+    fontWeight: '700',
+  },
+  headerSubtitle: {
+    ...FONTS.body,
+    color: 'rgba(255,255,255,0.9)',
+    marginTop: 4,
+  },
+  iconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   list: {
     padding: SIZES.lg,
@@ -141,6 +175,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   payoutCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: SIZES.lg,
     marginBottom: SIZES.md,
   },
   payoutHeader: {
@@ -156,22 +193,23 @@ const styles = StyleSheet.create({
   },
   status: {
     ...FONTS.small,
-    paddingHorizontal: SIZES.sm,
-    paddingVertical: SIZES.xs,
-    borderRadius: SIZES.xs,
+    paddingHorizontal: SIZES.md,
+    paddingVertical: 4,
+    borderRadius: 12,
     textTransform: 'capitalize',
+    fontWeight: '600',
   },
   pending: {
-    backgroundColor: '#FEF3C7',
-    color: '#92400E',
+    backgroundColor: COLORS.warning[100],
+    color: COLORS.warning[700],
   },
   processed: {
-    backgroundColor: '#DBEAFE',
-    color: '#1E40AF',
+    backgroundColor: COLORS.primary[100],
+    color: COLORS.primary[700],
   },
   paid: {
-    backgroundColor: '#D1FAE5',
-    color: '#065F46',
+    backgroundColor: COLORS.success[100],
+    color: COLORS.success[700],
   },
   period: {
     ...FONTS.caption,
@@ -194,13 +232,13 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   netAmount: {
-    ...FONTS.body,
-    fontWeight: '600',
-    color: COLORS.primary,
+    ...FONTS.h4,
+    fontWeight: '700',
+    color: COLORS.primary[600],
   },
   paidDate: {
     ...FONTS.small,
-    color: COLORS.success,
+    color: COLORS.success[600],
     marginTop: SIZES.sm,
   },
   emptyState: {
@@ -224,21 +262,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   unpaidCard: {
+    backgroundColor: COLORS.warning[50],
+    borderRadius: 16,
+    padding: SIZES.lg,
     marginHorizontal: SIZES.lg,
     marginBottom: SIZES.md,
-    backgroundColor: '#FEF3C7',
     borderLeftWidth: 4,
-    borderLeftColor: '#F59E0B',
+    borderLeftColor: COLORS.warning[500],
   },
   unpaidTitle: {
-    ...FONTS.body,
-    fontWeight: '600',
-    color: '#92400E',
+    ...FONTS.h4,
+    fontWeight: '700',
+    color: COLORS.warning[800],
     marginBottom: SIZES.xs,
   },
   unpaidSubtitle: {
     ...FONTS.caption,
-    color: '#78350F',
+    color: COLORS.warning[700],
     marginBottom: SIZES.md,
   },
 });

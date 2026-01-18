@@ -1,60 +1,82 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, SIZES } from '../constants/theme';
+import React from 'react';
+import { View, Text, StyleSheet, Image } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { COLORS, FONTS, SIZES, GRADIENTS } from '../constants/theme';
 
 export default function SplashScreen() {
   return (
-    <View style={styles.container}>
-      <View style={styles.logoContainer}>
-        <View style={styles.iconCircle}>
-          <Ionicons name="football" size={60} color={COLORS.primary} />
+    <LinearGradient
+      colors={GRADIENTS.primary}
+      style={styles.container}
+    >
+      <View style={styles.content}>
+        <Image 
+          source={require('../../assets/icon.png')} 
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Text style={styles.title}>LTP Turf Owner</Text>
+        <Text style={styles.tagline}>Manage Your Turfs Effortlessly</Text>
+
+        <View style={styles.dotsContainer}>
+          <View style={[styles.dot, styles.dotActive]} />
+          <View style={[styles.dot, styles.dotActive]} />
+          <View style={[styles.dot, styles.dotActive]} />
         </View>
-        <Text style={styles.title}>Turf Owner</Text>
-        <Text style={styles.subtitle}>Manage Your Turfs</Text>
       </View>
-      <ActivityIndicator size="large" color={COLORS.primary} style={styles.loader} />
+
+      {/* Version */}
       <Text style={styles.version}>Version 1.0.0</Text>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.card,
+  },
+  content: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: SIZES.xl,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: SIZES.xxl,
-  },
-  iconCircle: {
+  logo: {
     width: 120,
     height: 120,
-    borderRadius: 60,
-    backgroundColor: COLORS.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SIZES.lg,
+    marginBottom: SIZES.xl,
   },
   title: {
     ...FONTS.h1,
-    color: COLORS.text,
-    marginBottom: SIZES.xs,
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: SIZES.sm,
   },
-  subtitle: {
+  tagline: {
     ...FONTS.body,
-    color: COLORS.textSecondary,
+    color: '#FFFFFF',
+    opacity: 0.9,
+    marginBottom: SIZES.xxxl,
   },
-  loader: {
-    marginTop: SIZES.xl,
+  dotsContainer: {
+    flexDirection: 'row',
+    gap: SIZES.sm,
+  },
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  dotActive: {
+    backgroundColor: '#FFFFFF',
   },
   version: {
-    ...FONTS.caption,
-    color: COLORS.textLight,
-    position: 'absolute',
-    bottom: SIZES.xl,
+    ...FONTS.small,
+    color: '#FFFFFF',
+    opacity: 0.8,
+    textAlign: 'center',
+    marginBottom: SIZES.xxl,
   },
 });

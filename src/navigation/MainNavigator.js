@@ -14,6 +14,15 @@ import { COLORS } from '../constants/theme';
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
+function DashboardStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="DashboardHome" component={DashboardScreen} />
+      <Stack.Screen name="CreateOfflineBooking" component={CreateOfflineBookingScreen} />
+    </Stack.Navigator>
+  );
+}
+
 function TurfsStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -50,7 +59,7 @@ export default function MainNavigator() {
         tabBarInactiveTintColor: COLORS.textSecondary,
       })}
     >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} />
+      <Tab.Screen name="Dashboard" component={DashboardStack} />
       <Tab.Screen name="Turfs" component={TurfsStack} />
       <Tab.Screen name="Bookings" component={BookingsStack} />
       <Tab.Screen name="Payouts" component={PayoutsScreen} />

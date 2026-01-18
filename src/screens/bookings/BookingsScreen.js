@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Alert, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Alert, Modal, ScrollView, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
-import Header from '../../components/common/Header';
 import { bookingService } from '../../services/bookingService';
-import { COLORS, SIZES, FONTS } from '../../constants/theme';
+import { COLORS, SIZES, FONTS, GRADIENTS, SHADOWS } from '../../constants/theme';
 
 export default function BookingsScreen({ navigation }) {
   const [bookings, setBookings] = useState([]);
@@ -131,8 +131,18 @@ export default function BookingsScreen({ navigation }) {
   const showBookingDetails = (booking) => {
     const actions = [{ text: 'Close', style: 'cancel' }];
     
+    // Build payment details string
+    let paymentDetails = '';
+    if (booking.paid_amount !== undefined && booking.pending_amount !== undefined) {
+      paymentDetails = `\n\nPayment Details:\nPaid: ₹${booking.paid_amount}\nPending: ₹${booking.pending_amount}`;
+      if (booking.advance_percentage) {
+        paymentDetails += `\nAdvance: ${booking.advance_percentage}%`;
+      }
+      paymentDetails += `\nType: ${booking.payment_type || 'full'}`;
+    }
+    
     if (booking.status === 'confirmed') {
-      if (booking.payment_status === 'pending') {
+      if (booking.payment_status === 'pending' && booking.pending_amount > 0) {
         actions.push({ text: 'Confirm Payment', onPress: () => handleConfirmPayment(booking) });
       }
       if (booking.payment_status === 'success' && isBookingEnded(booking)) {
@@ -144,27 +154,37 @@ export default function BookingsScreen({ navigation }) {
     
     Alert.alert(
       `Booking #${booking.booking_number}`,
-      `Player: ${booking.player_name}\nPhone: ${booking.player_phone}\nTurf: ${booking.turf?.name}\nDate: ${booking.booking_date}\nTime: ${booking.start_time} - ${booking.end_time}\nDuration: ${booking.slot_duration} min\nAmount: ₹${booking.final_amount || booking.amount}\nType: ${booking.booking_type}\nStatus: ${booking.status === 'no_show' ? 'No Show' : booking.status}\nPayment: ${booking.payment_status}`,
+      `Player: ${booking.player_name}\nPhone: ${booking.player_phone}\nTurf: ${booking.turf?.name}\nDate: ${booking.booking_date}\nTime: ${booking.start_time} - ${booking.end_time}\nDuration: ${booking.slot_duration} min\nAmount: ₹${booking.final_amount || booking.amount}${paymentDetails}\nType: ${booking.booking_type}\nStatus: ${booking.status === 'no_show' ? 'No Show' : booking.status}\nPayment: ${booking.payment_status}`,
       actions
     );
   };
 
   const handleConfirmPayment = (booking) => {
+    const pendingAmount = booking.pending_amount || booking.final_amount || booking.amount;
+    const paidAmount = booking.paid_amount || 0;
+    
     Alert.alert(
       'Confirm Payment',
-      `Confirm payment received for booking #${booking.booking_number}?\n\nAmount: ₹${booking.final_amount || booking.amount}`,
+      `Booking: #${booking.booking_number}\n\nPayment Summary:\nTotal Amount: ₹${booking.final_amount || booking.amount}\nAlready Paid: ₹${paidAmount}\nPending Amount: ₹${pendingAmount}\n\nConfirm that ₹${pendingAmount} has been received?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Confirm', onPress: () => confirmPayment(booking.id) }
+        { text: 'Confirm', onPress: () => confirmPayment(booking.id, pendingAmount) }
       ]
     );
   };
 
-  const confirmPayment = async (id) => {
+  const confirmPayment = async (id, amount) => {
     setLoading(true);
     try {
-      await bookingService.confirmPayment(id);
-      Alert.alert('Success', 'Payment confirmed successfully');
+      const response = await bookingService.confirmPayment(id, amount);
+      const paymentDetails = response.data?.payment_details;
+      
+      let message = 'Payment confirmed successfully';
+      if (paymentDetails) {
+        message = `Payment Confirmed!\n\nPreviously Paid: ₹${paymentDetails.previous_paid_amount}\nJust Received: ₹${paymentDetails.additional_amount_paid}\nTotal Paid: ₹${paymentDetails.total_paid_amount}\nRemaining: ₹${paymentDetails.remaining_amount}`;
+      }
+      
+      Alert.alert('Success', message);
       loadBookings();
     } catch (error) {
       console.error('❌ Confirm payment error:', error);
@@ -187,7 +207,7 @@ export default function BookingsScreen({ navigation }) {
       onPress={() => showBookingDetails(item)}
       activeOpacity={0.7}
     >
-      <Card style={styles.bookingCard}>
+      <View style={[styles.bookingCard, SHADOWS.medium]}>
       <View style={styles.bookingHeader}>
         <Text style={styles.bookingId}>#{item.booking_number || item.id}</Text>
         <Text style={[styles.status, styles[item.status]]}>
@@ -203,7 +223,14 @@ export default function BookingsScreen({ navigation }) {
         {item.start_time && new Date('2000-01-01 ' + item.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} - {item.end_time && new Date('2000-01-01 ' + item.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} ({item.slot_duration} min)
       </Text>
       <View style={styles.bookingFooter}>
-        <Text style={styles.amount}>₹{item.final_amount || item.amount}</Text>
+        <View>
+          <Text style={styles.amount}>₹{item.final_amount || item.amount}</Text>
+          {item.paid_amount !== undefined && item.pending_amount !== undefined && item.pending_amount > 0 && (
+            <Text style={styles.paymentBreakdown}>
+              Paid: ₹{item.paid_amount} | Pending: ₹{item.pending_amount}
+            </Text>
+          )}
+        </View>
         <View style={styles.badges}>
           <Text style={styles.bookingType}>{item.booking_type}</Text>
           <Text style={[styles.paymentStatus, styles[`payment_${item.payment_status}`]]}>
@@ -243,24 +270,25 @@ export default function BookingsScreen({ navigation }) {
           />
         </View>
       )}
-      </Card>
+      </View>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.headerWrapper}>
-        <Header 
-          title="Bookings" 
-          rightComponent={
-            <Button
-              title="+ Offline"
-              onPress={() => navigation.navigate('CreateOfflineBooking')}
-              style={styles.addButton}
-            />
-          }
-        />
-      </View>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <LinearGradient colors={GRADIENTS.primary} style={styles.header}>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Bookings</Text>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => navigation.navigate('CreateOfflineBooking')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="add-circle" size={24} color="#FFF" />
+            <Text style={styles.addButtonText}>Offline</Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
 
       <View style={styles.filterBar}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusFilters}>
@@ -386,19 +414,41 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  headerWrapper: {
-    backgroundColor: '#FFF',
+  header: {
+    paddingHorizontal: SIZES.xl,
+    paddingVertical: SIZES.xl,
+    paddingBottom: SIZES.lg,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    ...FONTS.h1,
+    color: '#FFF',
+    fontWeight: '700',
   },
   addButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    minWidth: 80,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingVertical: SIZES.sm,
+    paddingHorizontal: SIZES.md,
+    borderRadius: 20,
+    gap: SIZES.xs,
+  },
+  addButtonText: {
+    ...FONTS.body,
+    color: '#FFF',
+    fontWeight: '600',
   },
   filterBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: SIZES.lg,
-    marginBottom: SIZES.md,
+    paddingVertical: SIZES.md,
+    backgroundColor: '#FFF',
     gap: SIZES.sm,
   },
   statusFilters: {
@@ -408,15 +458,15 @@ const styles = StyleSheet.create({
     paddingVertical: SIZES.sm,
     paddingHorizontal: SIZES.lg,
     borderRadius: 20,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: COLORS.gray[100],
     marginRight: SIZES.sm,
   },
   statusChipActive: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primary[500],
   },
   statusChipText: {
     ...FONTS.caption,
-    color: '#64748B',
+    color: COLORS.gray[600],
     fontWeight: '600',
   },
   statusChipTextActive: {
@@ -426,17 +476,19 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: COLORS.gray[50],
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
   },
   filterBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.error[500],
   },
   modalOverlay: {
     flex: 1,
@@ -478,13 +530,10 @@ const styles = StyleSheet.create({
     paddingVertical: SIZES.sm,
     paddingHorizontal: SIZES.lg,
     borderRadius: 20,
-    backgroundColor: '#F1F5F9',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: COLORS.gray[100],
   },
   filterOptionActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary[500],
   },
   filterOptionText: {
     ...FONTS.caption,
@@ -506,6 +555,9 @@ const styles = StyleSheet.create({
     padding: SIZES.lg,
   },
   bookingCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: SIZES.lg,
     marginBottom: SIZES.md,
   },
   bookingHeader: {
@@ -520,26 +572,27 @@ const styles = StyleSheet.create({
   },
   status: {
     ...FONTS.small,
-    paddingHorizontal: SIZES.sm,
-    paddingVertical: SIZES.xs,
-    borderRadius: SIZES.xs,
+    paddingHorizontal: SIZES.md,
+    paddingVertical: 4,
+    borderRadius: 12,
     textTransform: 'capitalize',
+    fontWeight: '600',
   },
   confirmed: {
-    backgroundColor: '#DBEAFE',
-    color: '#1E40AF',
+    backgroundColor: COLORS.primary[100],
+    color: COLORS.primary[700],
   },
   completed: {
-    backgroundColor: '#D1FAE5',
-    color: '#065F46',
+    backgroundColor: COLORS.success[100],
+    color: COLORS.success[700],
   },
   cancelled: {
-    backgroundColor: '#FEE2E2',
-    color: '#991B1B',
+    backgroundColor: COLORS.error[100],
+    color: COLORS.error[700],
   },
   no_show: {
-    backgroundColor: '#FEF3C7',
-    color: '#92400E',
+    backgroundColor: COLORS.warning[100],
+    color: COLORS.warning[700],
   },
   turfName: {
     ...FONTS.body,
@@ -570,9 +623,14 @@ const styles = StyleSheet.create({
     marginTop: SIZES.xs,
   },
   amount: {
-    ...FONTS.body,
-    fontWeight: '600',
-    color: COLORS.primary,
+    ...FONTS.h3,
+    fontWeight: '700',
+    color: COLORS.primary[600],
+  },
+  paymentBreakdown: {
+    ...FONTS.small,
+    color: COLORS.textSecondary,
+    marginTop: 2,
   },
   badges: {
     flexDirection: 'row',
@@ -582,29 +640,31 @@ const styles = StyleSheet.create({
     ...FONTS.small,
     paddingHorizontal: SIZES.sm,
     paddingVertical: 2,
-    borderRadius: SIZES.xs,
-    backgroundColor: '#F3F4F6',
-    color: '#374151',
+    borderRadius: 8,
+    backgroundColor: COLORS.gray[100],
+    color: COLORS.gray[700],
     textTransform: 'capitalize',
+    fontWeight: '600',
   },
   paymentStatus: {
     ...FONTS.small,
     paddingHorizontal: SIZES.sm,
     paddingVertical: 2,
-    borderRadius: SIZES.xs,
+    borderRadius: 8,
     textTransform: 'capitalize',
+    fontWeight: '600',
   },
   payment_success: {
-    backgroundColor: '#D1FAE5',
-    color: '#065F46',
+    backgroundColor: COLORS.success[100],
+    color: COLORS.success[700],
   },
   payment_pending: {
-    backgroundColor: '#FEF3C7',
-    color: '#92400E',
+    backgroundColor: COLORS.warning[100],
+    color: COLORS.warning[700],
   },
   payment_failed: {
-    backgroundColor: '#FEE2E2',
-    color: '#991B1B',
+    backgroundColor: COLORS.error[100],
+    color: COLORS.error[700],
   },
   emptyState: {
     flex: 1,
@@ -630,7 +690,7 @@ const styles = StyleSheet.create({
     marginTop: SIZES.md,
     paddingTop: SIZES.md,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: COLORS.gray[200],
   },
   actionButtons: {
     flexDirection: 'row',

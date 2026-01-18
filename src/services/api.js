@@ -23,18 +23,29 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
-    console.log('✅ API Response:', response.config.method.toUpperCase(), response.config.url, response.status, response.data);
+    console.log('✅ API Response:', response.config.method.toUpperCase(), response.config.url, response.status);
     return response;
   },
   async (error) => {
-    // Only log in development, don't show red box errors
+    // Prevent app crash on network errors
+    if (!error.response) {
+      console.log('❌ Network Error: Cannot reach server');
+      return Promise.reject({
+        message: 'Cannot connect to server. Please check your internet connection.',
+        isNetworkError: true
+      });
+    }
+    
+    // Only log in development
     if (__DEV__ && error.response?.status !== 400) {
       console.log('❌ API Error:', error.config?.method?.toUpperCase(), error.config?.url, error.response?.status);
     }
+    
     if (error.response?.status === 401) {
       await AsyncStorage.removeItem('token');
       await AsyncStorage.removeItem('user');
     }
+    
     return Promise.reject(error);
   }
 );

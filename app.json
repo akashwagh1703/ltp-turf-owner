@@ -1,12 +1,40 @@
 {
   "expo": {
-    "extra": {
-      "eas": {
-        "projectId": "58b6027a-25fd-4e8f-93f9-00fa1117e136"
-      }
+    "name": "LTP Turf Owner",
+    "slug": "ltp-turf-owner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#10B981"
+    },
+    "assetBundlePatterns": [
+      "assets/**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.playltp.ltpturfowner"
     },
     "android": {
-      "package": "com.playltp.ltpturfowner"
+      "package": "com.playltp.ltpturfowner",
+      "versionCode": 1,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#10B981"
+      }
+    },
+    "owner": "playltpv3",
+    "extra": {
+      "eas": {
+        "projectId": "f36cf45d-4ca3-4a95-a684-1ab4fadff76f"
+      }
     }
   }
 }

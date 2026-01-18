@@ -10,7 +10,7 @@ export default function Button({ title, onPress, variant = 'primary', loading, d
       disabled={disabled || loading}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#FFF' : COLORS.primary} />
+        <ActivityIndicator color="#FFFFFF" />
       ) : (
         <Text style={[styles.text, styles[`${variant}Text`]]}>{title}</Text>
       )}
@@ -20,29 +20,30 @@ export default function Button({ title, onPress, variant = 'primary', loading, d
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: SIZES.md,
+    paddingVertical: SIZES.md + 2,
     paddingHorizontal: SIZES.lg,
-    borderRadius: SIZES.radius,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 48,
   },
   primary: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primary[500],
   },
   secondary: {
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.gray[100],
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.gray[300],
   },
   text: {
     ...FONTS.body,
     fontWeight: '600',
   },
   primaryText: {
-    color: '#FFF',
+    color: '#FFFFFF',
   },
   secondaryText: {
-    color: COLORS.text,
+    color: COLORS.gray[900],
   },
   disabled: {
     opacity: 0.5,

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import { turfService } from '../../services/turfService';
-import { COLORS, SIZES, FONTS } from '../../constants/theme';
+import { COLORS, SIZES, FONTS, GRADIENTS, SHADOWS } from '../../constants/theme';
 import { BASE_URL } from '../../constants/config';
 
 const { width } = Dimensions.get('window');
@@ -45,26 +46,27 @@ export default function TurfDetailScreen({ route, navigation }) {
 
   if (loading || !turf) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <LinearGradient colors={GRADIENTS.primary} style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#FFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Loading...</Text>
-        </View>
+          <View style={{ width: 40 }} />
+        </LinearGradient>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <LinearGradient colors={GRADIENTS.primary} style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Turf Details</Text>
-        <View style={{ width: 24 }} />
-      </View>
+        <Text style={styles.headerTitle}>{turf.name}</Text>
+        <View style={{ width: 40 }} />
+      </LinearGradient>
 
       <ScrollView style={styles.content}>
         <Card style={styles.card}>
@@ -179,13 +181,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: SIZES.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    paddingHorizontal: SIZES.xl,
+    paddingVertical: SIZES.lg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     ...FONTS.h3,
-    color: COLORS.text,
+    color: '#FFF',
+    fontWeight: '700',
+    flex: 1,
+    textAlign: 'center',
   },
   content: {
     flex: 1,
@@ -207,22 +219,23 @@ const styles = StyleSheet.create({
   },
   status: {
     ...FONTS.small,
-    paddingHorizontal: SIZES.sm,
-    paddingVertical: SIZES.xs,
-    borderRadius: SIZES.xs,
+    paddingHorizontal: SIZES.md,
+    paddingVertical: 4,
+    borderRadius: 12,
     textTransform: 'capitalize',
+    fontWeight: '600',
   },
   approved: {
-    backgroundColor: '#D1FAE5',
-    color: '#065F46',
+    backgroundColor: COLORS.success[100],
+    color: COLORS.success[700],
   },
   pending: {
-    backgroundColor: '#FEF3C7',
-    color: '#92400E',
+    backgroundColor: COLORS.warning[100],
+    color: COLORS.warning[700],
   },
   suspended: {
-    backgroundColor: '#FEE2E2',
-    color: '#991B1B',
+    backgroundColor: COLORS.error[100],
+    color: COLORS.error[700],
   },
   description: {
     ...FONTS.body,
@@ -262,14 +275,17 @@ const styles = StyleSheet.create({
     gap: SIZES.sm,
   },
   amenityChip: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: COLORS.primary[50],
     paddingHorizontal: SIZES.md,
-    paddingVertical: SIZES.xs,
-    borderRadius: SIZES.md,
+    paddingVertical: SIZES.sm,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.primary[200],
   },
   amenityText: {
     ...FONTS.caption,
-    color: COLORS.primary,
+    color: COLORS.primary[600],
+    fontWeight: '600',
   },
   updateButton: {
     margin: SIZES.lg,
@@ -279,15 +295,16 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     marginRight: SIZES.md,
-    borderRadius: SIZES.md,
+    borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: COLORS.border,
+    backgroundColor: COLORS.gray[100],
     position: 'relative',
+    ...SHADOWS.small,
   },
   image: {
     width: width * 0.7,
     height: 200,
-    borderRadius: SIZES.md,
+    borderRadius: 12,
   },
   imagePlaceholder: {
     position: 'absolute',

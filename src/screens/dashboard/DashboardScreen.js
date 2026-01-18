@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Card from '../../components/common/Card';
@@ -12,6 +12,7 @@ export default function DashboardScreen({ navigation }) {
   const [stats, setStats] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [quickBookingModal, setQuickBookingModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -39,127 +40,161 @@ export default function DashboardScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Header showAvatar showNotification />
+      <View style={styles.headerContainer}>
+        <Header showAvatar />
+        <TouchableOpacity 
+          style={styles.offlineButton}
+          onPress={() => navigation.navigate('CreateOfflineBooking')}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add-circle" size={20} color="#FFF" />
+          <Text style={styles.offlineButtonText}>Offline</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadData} />}
+        refreshControl={
+          <RefreshControl 
+            refreshing={loading} 
+            onRefresh={loadData}
+            colors={['#10B981']}
+            tintColor="#10B981"
+          />
+        }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.statsContainer}>
-          <View style={styles.statsGrid}>
-            <TouchableOpacity style={styles.statCard} onPress={() => navigation.navigate('Turfs')} activeOpacity={0.85}>
-              <View style={[styles.statIconCircle, { backgroundColor: '#E0F2FE' }]}>
-                <Ionicons name="football" size={26} color="#0284C7" />
+          {loading && !stats ? (
+            <>
+              <View style={[styles.todaySummary, styles.skeleton]}>
+                <View style={[styles.skeletonLine, { width: '40%', height: 24 }]} />
               </View>
-              <View style={styles.statContent}>
-                <Text style={styles.statValue}>{stats?.total_turfs || 0}</Text>
-                <Text style={styles.statLabel}>Total Turfs</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.statCard} activeOpacity={0.85}>
-              <View style={[styles.statIconCircle, { backgroundColor: '#FEF3C7' }]}>
-                <Ionicons name="today" size={26} color="#D97706" />
-              </View>
-              <View style={styles.statContent}>
-                <Text style={styles.statValue}>{stats?.today_bookings || 0}</Text>
-                <Text style={styles.statLabel}>Today</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.statCard} onPress={() => navigation.navigate('Payouts')} activeOpacity={0.85}>
-              <View style={[styles.statIconCircle, { backgroundColor: '#D1FAE5' }]}>
-                <Ionicons name="wallet" size={26} color="#059669" />
-              </View>
-              <View style={styles.statContent}>
-                <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>₹{parseFloat(stats?.total_revenue || 0).toFixed(2)}</Text>
-                <Text style={styles.statLabel}>Total Revenue</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.statCard} activeOpacity={0.85}>
-              <View style={[styles.statIconCircle, { backgroundColor: '#FEE2E2' }]}>
-                <Ionicons name="hourglass" size={26} color="#DC2626" />
-              </View>
-              <View style={styles.statContent}>
-                <Text style={styles.statValue}>{stats?.pending_bookings || 0}</Text>
-                <Text style={styles.statLabel}>Pending</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.bookingTypeCards}>
-            <View style={styles.bookingTypeCard}>
-              <View style={styles.bookingTypeHeader}>
-                <View style={[styles.bookingTypeIcon, { backgroundColor: '#DBEAFE' }]}>
-                  <Ionicons name="globe-outline" size={20} color="#1D4ED8" />
-                </View>
-                <Text style={styles.bookingTypeTitle}>Online Bookings</Text>
-              </View>
-              <View style={styles.bookingTypeStats}>
-                <View style={styles.bookingTypeStat}>
-                  <Text style={styles.bookingTypeValue}>{stats?.online_bookings || 0}</Text>
-                  <Text style={styles.bookingTypeLabel}>Count</Text>
-                </View>
-                <View style={styles.bookingTypeDivider} />
-                <View style={styles.bookingTypeStat}>
-                  <Text style={[styles.bookingTypeValue, { color: '#059669' }]}>₹{stats?.online_revenue || '0'}</Text>
-                  <Text style={styles.bookingTypeLabel}>Revenue</Text>
-                </View>
-              </View>
+            </>
+          ) : (
+            <>
+          <View style={styles.todaySummary}>
+            <View style={styles.summaryHeader}>
+              <Ionicons name="sunny" size={24} color="#F59E0B" />
+              <Text style={styles.summaryTitle}>Today</Text>
             </View>
-
-            <View style={styles.bookingTypeCard}>
-              <View style={styles.bookingTypeHeader}>
-                <View style={[styles.bookingTypeIcon, { backgroundColor: '#FEF3C7' }]}>
-                  <Ionicons name="cash-outline" size={20} color="#B45309" />
-                </View>
-                <Text style={styles.bookingTypeTitle}>Offline Bookings</Text>
+            <View style={styles.summaryStats}>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryNumber}>{stats?.today_bookings || 0}</Text>
+                <Text style={styles.summaryLabel}>Bookings</Text>
               </View>
-              <View style={styles.bookingTypeStats}>
-                <View style={styles.bookingTypeStat}>
-                  <Text style={styles.bookingTypeValue}>{stats?.offline_bookings || 0}</Text>
-                  <Text style={styles.bookingTypeLabel}>Count</Text>
-                </View>
-                <View style={styles.bookingTypeDivider} />
-                <View style={styles.bookingTypeStat}>
-                  <Text style={[styles.bookingTypeValue, { color: '#059669' }]}>₹{stats?.offline_revenue || '0'}</Text>
-                  <Text style={styles.bookingTypeLabel}>Revenue</Text>
-                </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryItem}>
+                <Text style={[styles.summaryNumber, { color: '#10B981' }]}>₹{parseFloat(stats?.total_revenue || 0).toFixed(0)}</Text>
+                <Text style={styles.summaryLabel}>Earned</Text>
               </View>
             </View>
           </View>
 
-          <View style={styles.paymentCards}>
-            <View style={[styles.paymentCard, { backgroundColor: '#D1FAE5' }]}>
-              <Ionicons name="checkmark-circle" size={24} color="#047857" />
-              <View style={styles.paymentContent}>
-                <Text style={styles.paymentValue}>₹{stats?.paid_amount || '0'}</Text>
-                <Text style={styles.paymentLabel}>Paid</Text>
-              </View>
+          {/* Quick Stats */}
+          {/* Quick Stats */}
+          <View style={styles.quickStats}>
+            <TouchableOpacity style={[styles.quickStatCard, { backgroundColor: '#EFF6FF' }]} onPress={() => navigation.navigate('Turfs')} activeOpacity={0.7}>
+              <Ionicons name="football" size={32} color="#3B82F6" />
+              <Text style={styles.quickStatNumber}>{stats?.total_turfs || 0}</Text>
+              <Text style={styles.quickStatLabel}>My Turfs</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.quickStatCard, { backgroundColor: '#F0FDF4' }]} onPress={() => navigation.navigate('Bookings')} activeOpacity={0.7}>
+              <Ionicons name="calendar" size={32} color="#10B981" />
+              <Text style={styles.quickStatNumber}>{(stats?.online_bookings || 0) + (stats?.offline_bookings || 0)}</Text>
+              <Text style={styles.quickStatLabel}>Total Bookings</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.quickStatCard, { backgroundColor: '#FEF3C7' }]} onPress={() => navigation.navigate('Bookings')} activeOpacity={0.7}>
+              <Ionicons name="hourglass" size={32} color="#F59E0B" />
+              <Text style={styles.quickStatNumber}>{stats?.pending_bookings || 0}</Text>
+              <Text style={styles.quickStatLabel}>Waiting</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Money Overview */}
+          <View style={styles.moneySection}>
+            <Text style={styles.sectionTitle}>Money</Text>
+            <View style={styles.moneyCards}>
+              <TouchableOpacity style={styles.moneyCard} onPress={() => navigation.navigate('Payouts')} activeOpacity={0.7}>
+                <View style={styles.moneyCardHeader}>
+                  <Ionicons name="checkmark-circle" size={28} color="#10B981" />
+                  <Text style={styles.moneyCardLabel}>Received</Text>
+                </View>
+                <Text style={styles.moneyCardAmount}>₹{stats?.paid_amount || '0'}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.moneyCard} onPress={() => navigation.navigate('Bookings')} activeOpacity={0.7}>
+                <View style={styles.moneyCardHeader}>
+                  <Ionicons name="time-outline" size={28} color="#F59E0B" />
+                  <Text style={styles.moneyCardLabel}>To Collect</Text>
+                </View>
+                <Text style={styles.moneyCardAmount}>₹{stats?.pending_amount || '0'}</Text>
+              </TouchableOpacity>
             </View>
-            <View style={[styles.paymentCard, { backgroundColor: '#FEF3C7' }]}>
-              <Ionicons name="time" size={24} color="#B45309" />
-              <View style={styles.paymentContent}>
-                <Text style={styles.paymentValue}>₹{stats?.pending_amount || '0'}</Text>
-                <Text style={styles.paymentLabel}>Pending</Text>
+          </View>
+
+          {/* Booking Types */}
+          <View style={styles.bookingTypesSection}>
+            <Text style={styles.sectionTitle}>Booking Types</Text>
+            <View style={styles.bookingTypeCards}>
+              <View style={styles.bookingTypeCard}>
+                <View style={styles.bookingTypeHeader}>
+                  <Ionicons name="phone-portrait" size={24} color="#3B82F6" />
+                  <Text style={styles.bookingTypeTitle}>App Bookings</Text>
+                </View>
+                <View style={styles.bookingTypeStats}>
+                  <View style={styles.bookingTypeStat}>
+                    <Text style={styles.bookingTypeValue}>{stats?.online_bookings || 0}</Text>
+                    <Text style={styles.bookingTypeLabel}>Count</Text>
+                  </View>
+                  <View style={styles.bookingTypeDivider} />
+                  <View style={styles.bookingTypeStat}>
+                    <Text style={[styles.bookingTypeValue, { color: '#10B981' }]}>₹{stats?.online_revenue || '0'}</Text>
+                    <Text style={styles.bookingTypeLabel}>Earned</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.bookingTypeCard}>
+                <View style={styles.bookingTypeHeader}>
+                  <Ionicons name="person" size={24} color="#F59E0B" />
+                  <Text style={styles.bookingTypeTitle}>Walk-in Bookings</Text>
+                </View>
+                <View style={styles.bookingTypeStats}>
+                  <View style={styles.bookingTypeStat}>
+                    <Text style={styles.bookingTypeValue}>{stats?.offline_bookings || 0}</Text>
+                    <Text style={styles.bookingTypeLabel}>Count</Text>
+                  </View>
+                  <View style={styles.bookingTypeDivider} />
+                  <View style={styles.bookingTypeStat}>
+                    <Text style={[styles.bookingTypeValue, { color: '#10B981' }]}>₹{stats?.offline_revenue || '0'}</Text>
+                    <Text style={styles.bookingTypeLabel}>Earned</Text>
+                  </View>
+                </View>
               </View>
             </View>
           </View>
+            </>
+          )}
         </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Bookings</Text>
+            <Text style={styles.sectionTitle}>Latest Bookings</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Bookings')} activeOpacity={0.7}>
-              <Text style={styles.seeAll}>See All</Text>
+              <Text style={styles.seeAll}>View All</Text>
             </TouchableOpacity>
           </View>
           {bookings.length === 0 ? (
-            <Card style={styles.emptyCard}>
-              <Ionicons name="calendar-outline" size={48} color={COLORS.textLight} />
-              <Text style={styles.emptyText}>No recent bookings</Text>
-            </Card>
+            <View style={styles.emptyStateContainer}>
+              <View style={styles.emptyIconCircle}>
+                <Ionicons name="calendar-outline" size={48} color="#94A3B8" />
+              </View>
+              <Text style={styles.emptyTitle}>No Bookings Yet</Text>
+              <Text style={styles.emptySubtitle}>Bookings will appear here</Text>
+            </View>
           ) : (
             bookings.slice(0, 5).map((booking) => (
               <TouchableOpacity key={booking.id} onPress={() => navigation.navigate('Bookings')} activeOpacity={0.9}>
@@ -209,6 +244,26 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#10B981',
   },
+  headerContainer: {
+    position: 'relative',
+  },
+  offlineButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    gap: 6,
+  },
+  offlineButtonText: {
+    ...FONTS.caption,
+    color: '#FFF',
+    fontWeight: '600',
+  },
   scrollContent: {
     backgroundColor: '#F8FAFC',
     borderTopLeftRadius: 24,
@@ -220,45 +275,117 @@ const styles = StyleSheet.create({
     paddingTop: SIZES.xl,
     paddingBottom: SIZES.md,
   },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SIZES.md,
-  },
-  statCard: {
-    width: '47.5%',
+  todaySummary: {
     backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: SIZES.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SIZES.md,
+    borderRadius: 20,
+    padding: SIZES.xl,
+    marginBottom: SIZES.lg,
     ...SHADOWS.medium,
     elevation: 3,
   },
-  statIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    justifyContent: 'center',
+  summaryHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: SIZES.sm,
+    marginBottom: SIZES.lg,
   },
-  statContent: {
-    flex: 1,
-  },
-  statValue: {
+  summaryTitle: {
     ...FONTS.h2,
     color: '#0F172A',
     fontWeight: '700',
-    marginBottom: 2,
   },
-  statLabel: {
-    ...FONTS.tiny,
+  summaryStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  summaryItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  summaryNumber: {
+    ...FONTS.h1,
+    color: '#0F172A',
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  summaryLabel: {
+    ...FONTS.body,
     color: '#64748B',
     fontWeight: '500',
   },
+  summaryDivider: {
+    width: 1,
+    height: 50,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: SIZES.lg,
+  },
+  quickStats: {
+    flexDirection: 'row',
+    gap: SIZES.md,
+    marginBottom: SIZES.lg,
+  },
+  quickStatCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: SIZES.lg,
+    alignItems: 'center',
+    ...SHADOWS.small,
+    elevation: 2,
+  },
+  quickStatNumber: {
+    ...FONTS.h1,
+    color: '#0F172A',
+    fontWeight: '800',
+    marginTop: SIZES.sm,
+    marginBottom: 4,
+  },
+  quickStatLabel: {
+    ...FONTS.caption,
+    color: '#64748B',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  moneySection: {
+    marginBottom: SIZES.lg,
+  },
+  bookingTypesSection: {
+    marginBottom: SIZES.lg,
+  },
+  sectionTitle: {
+    ...FONTS.h3,
+    color: '#0F172A',
+    fontWeight: '700',
+    marginBottom: SIZES.md,
+  },
+  moneyCards: {
+    flexDirection: 'row',
+    gap: SIZES.md,
+  },
+  moneyCard: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: SIZES.lg,
+    ...SHADOWS.medium,
+    elevation: 3,
+  },
+  moneyCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SIZES.sm,
+    marginBottom: SIZES.md,
+  },
+  moneyCardLabel: {
+    ...FONTS.body,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  moneyCardAmount: {
+    ...FONTS.h2,
+    color: '#0F172A',
+    fontWeight: '800',
+  },
   bookingTypeCards: {
-    marginTop: SIZES.lg,
     gap: SIZES.md,
   },
   bookingTypeCard: {
@@ -274,15 +401,8 @@ const styles = StyleSheet.create({
     gap: SIZES.sm,
     marginBottom: SIZES.md,
   },
-  bookingTypeIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   bookingTypeTitle: {
-    ...FONTS.bodyMedium,
+    ...FONTS.body,
     color: '#0F172A',
     fontWeight: '600',
   },
@@ -358,12 +478,6 @@ const styles = StyleSheet.create({
   emptyCard: {
     alignItems: 'center',
     paddingVertical: SIZES.xxl,
-  },
-  emptyText: {
-    ...FONTS.body,
-    color: COLORS.textLight,
-    textAlign: 'center',
-    marginTop: SIZES.sm,
   },
   bookingCard: {
     backgroundColor: '#FFF',

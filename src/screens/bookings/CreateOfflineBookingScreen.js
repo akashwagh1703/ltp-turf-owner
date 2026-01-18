@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Input from '../../components/common/Input';
@@ -9,7 +10,7 @@ import Card from '../../components/common/Card';
 import { turfService } from '../../services/turfService';
 import { bookingService } from '../../services/bookingService';
 import { slotService } from '../../services/slotService';
-import { COLORS, SIZES, FONTS } from '../../constants/theme';
+import { COLORS, SIZES, FONTS, GRADIENTS, SHADOWS } from '../../constants/theme';
 
 export default function CreateOfflineBookingScreen({ navigation }) {
   const [turfs, setTurfs] = useState([]);
@@ -17,7 +18,13 @@ export default function CreateOfflineBookingScreen({ navigation }) {
   const [formData, setFormData] = useState({
     player_name: '',
     player_phone: '',
-    booking_date: new Date().toISOString().split('T')[0],
+    booking_date: (() => {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    })(),
     slot_time: '',
     amount: '',
     payment_method: 'cash',
@@ -28,6 +35,19 @@ export default function CreateOfflineBookingScreen({ navigation }) {
   const [slots, setSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedSlots, setSelectedSlots] = useState([]);
+  const [paymentType, setPaymentType] = useState('full');
+  const [paidAmount, setPaidAmount] = useState('');
+
+  const formatTime = (time) => {
+    if (!time) return '';
+    // Handle both HH:MM and HH:MM:SS formats
+    const parts = time.split(':');
+    const hours = parseInt(parts[0]);
+    const minutes = parts[1] || '00';
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHour = hours % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
 
   useEffect(() => {
     loadTurfs();
@@ -177,11 +197,13 @@ export default function CreateOfflineBookingScreen({ navigation }) {
 
   const calculateTotalAmount = () => {
     if (selectedSlots.length === 0) return 0;
-    // Sum up individual slot prices if available, otherwise use uniform price
+    // Sum up individual slot prices from API, fallback to uniform price
     const totalPrice = selectedSlots.reduce((sum, slot) => {
       const slotPrice = parseFloat(slot.price || selectedTurf?.uniform_price || 0);
+      console.log('💰 Slot price calculation:', { slot_id: slot.id, slot_price: slot.price, uniform_price: selectedTurf?.uniform_price, used_price: slotPrice });
       return sum + slotPrice;
     }, 0);
+    console.log('💰 Total calculated amount:', totalPrice);
     return totalPrice.toFixed(2);
   };
 
@@ -197,6 +219,20 @@ export default function CreateOfflineBookingScreen({ navigation }) {
     if (selectedSlots.length === 0) {
       Alert.alert('Error', 'Please select at least one time slot');
       return;
+    }
+
+    // Validate partial payment
+    if (paymentType === 'partial') {
+      const advance = parseFloat(paidAmount);
+      const total = parseFloat(calculateTotalAmount());
+      if (!paidAmount || advance <= 0) {
+        Alert.alert('Error', 'Please enter advance amount');
+        return;
+      }
+      if (advance > total) {
+        Alert.alert('Error', 'Advance amount cannot be more than total amount');
+        return;
+      }
     }
 
     setLoading(true);
@@ -216,6 +252,8 @@ export default function CreateOfflineBookingScreen({ navigation }) {
         end_time: endTime,
         amount: totalAmount,
         payment_method: formData.payment_method,
+        payment_type: paymentType,
+        paid_amount: paymentType === 'partial' ? parseFloat(paidAmount) : (paymentType === 'full' ? parseFloat(totalAmount) : 0),
       };
       
       console.log('📤 Booking Data:', JSON.stringify(bookingData, null, 2));
@@ -267,14 +305,14 @@ export default function CreateOfflineBookingScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <LinearGradient colors={GRADIENTS.primary} style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>New Booking</Text>
         <View style={{ width: 24 }} />
-      </View>
+      </LinearGradient>
 
       <ScrollView style={styles.content}>
         <View style={styles.section}>
@@ -293,7 +331,7 @@ export default function CreateOfflineBookingScreen({ navigation }) {
                 <Text style={styles.turfLocation}>{turf.city} • ₹{turf.uniform_price}/hr</Text>
               </View>
               {selectedTurf?.id === turf.id && (
-                <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />
+                <Ionicons name="checkmark-circle" size={24} color={COLORS.primary[500]} />
               )}
             </TouchableOpacity>
           ))}
@@ -323,9 +361,17 @@ export default function CreateOfflineBookingScreen({ navigation }) {
               onPress={() => setShowDatePicker(true)}
             >
               <Text style={styles.dateText}>
-                {formData.booking_date}
+                {(() => {
+                  const [year, month, day] = formData.booking_date.split('-');
+                  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                  return date.toLocaleDateString('en-GB', { 
+                    day: '2-digit', 
+                    month: 'short', 
+                    year: 'numeric' 
+                  });
+                })()}
               </Text>
-              <Ionicons name="calendar-outline" size={20} color={COLORS.textSecondary} />
+              <Ionicons name="calendar-outline" size={20} color={COLORS.gray[600]} />
             </TouchableOpacity>
             {showDatePicker && (
             <DateTimePicker
@@ -334,9 +380,13 @@ export default function CreateOfflineBookingScreen({ navigation }) {
               display={Platform.OS === 'ios' ? 'spinner' : 'default'}
               onChange={(event, date) => {
                 setShowDatePicker(Platform.OS === 'ios');
-                if (date) {
+                if (date && event.type !== 'dismissed') {
                   setSelectedDate(date);
-                  const formattedDate = date.toISOString().split('T')[0];
+                  // Use local date string to avoid timezone issues
+                  const year = date.getFullYear();
+                  const month = String(date.getMonth() + 1).padStart(2, '0');
+                  const day = String(date.getDate()).padStart(2, '0');
+                  const formattedDate = `${year}-${month}-${day}`;
                   setFormData({ ...formData, booking_date: formattedDate });
                 }
               }}
@@ -344,6 +394,29 @@ export default function CreateOfflineBookingScreen({ navigation }) {
             />
             )}
             <Text style={styles.label}>Available Slots</Text>
+            <View style={styles.slotsHeader}>
+              <Text style={styles.slotsHeaderText}>
+                {loadingSlots ? 'Loading slots...' : `${slots.length} slots available`}
+              </Text>
+              {selectedTurf && !loadingSlots && (
+                <TouchableOpacity
+                  style={styles.refreshButton}
+                  onPress={async () => {
+                    try {
+                      await slotService.updatePrices({ turf_id: selectedTurf.id, date: formData.booking_date });
+                      await loadSlots(); // Reload slots after price update
+                      Alert.alert('Success', 'Slot prices updated successfully');
+                    } catch (error) {
+                      console.error('Price update error:', error);
+                      Alert.alert('Error', 'Failed to update prices');
+                    }
+                  }}
+                >
+                  <Ionicons name="refresh" size={16} color={COLORS.primary[600]} />
+                  <Text style={styles.refreshButtonText}>Refresh Prices</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             {loadingSlots ? (
               <Text style={styles.loadingText}>Loading slots...</Text>
             ) : slots.length === 0 ? (
@@ -368,7 +441,7 @@ export default function CreateOfflineBookingScreen({ navigation }) {
                         <Ionicons 
                           name={slot.is_booked ? "lock-closed" : (isSelected ? "checkmark-circle" : "time-outline")} 
                           size={16} 
-                          color={slot.is_booked ? "#991B1B" : (isSelected ? COLORS.primary : COLORS.textSecondary)} 
+                          color={slot.is_booked ? COLORS.error[700] : (isSelected ? COLORS.primary[500] : COLORS.gray[600])} 
                           style={{ marginRight: 6 }}
                         />
                         <Text style={[
@@ -376,7 +449,7 @@ export default function CreateOfflineBookingScreen({ navigation }) {
                           isSelected && styles.slotTextSelected,
                           slot.is_booked && styles.slotTextBooked,
                         ]}>
-                          {slot.start_time_display || slot.start_time}
+                          {formatTime(slot.start_time_display || slot.start_time)}
                         </Text>
                       </View>
                       {slot.is_booked ? (
@@ -388,7 +461,7 @@ export default function CreateOfflineBookingScreen({ navigation }) {
                         </View>
                       ) : isSelected && (
                         <View style={styles.priceTag}>
-                          <Text style={styles.priceText}>₹{selectedTurf?.uniform_price || 0}</Text>
+                          <Text style={styles.priceText}>₹{slot.price || selectedTurf?.uniform_price || 0}</Text>
                         </View>
                       )}
                     </TouchableOpacity>
@@ -413,7 +486,7 @@ export default function CreateOfflineBookingScreen({ navigation }) {
                 <Ionicons 
                   name={method === 'cash' ? 'cash-outline' : method === 'upi' ? 'phone-portrait-outline' : 'card-outline'} 
                   size={28} 
-                  color={formData.payment_method === method ? COLORS.primary : COLORS.textSecondary} 
+                  color={formData.payment_method === method ? COLORS.primary[500] : COLORS.gray[400]} 
                 />
                 <Text style={[
                   styles.paymentCardText,
@@ -426,13 +499,114 @@ export default function CreateOfflineBookingScreen({ navigation }) {
           </View>
         </View>
 
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Payment Type</Text>
+          <View style={styles.paymentTypeGrid}>
+            <TouchableOpacity
+              style={[
+                styles.paymentTypeCard,
+                paymentType === 'full' && styles.paymentTypeCardSelected
+              ]}
+              onPress={() => {
+                setPaymentType('full');
+                setPaidAmount(calculateTotalAmount());
+              }}
+            >
+              <Ionicons 
+                name="checkmark-done" 
+                size={28} 
+                color={paymentType === 'full' ? COLORS.primary[500] : COLORS.gray[400]} 
+              />
+              <Text style={[
+                styles.paymentTypeText,
+                paymentType === 'full' && styles.paymentTypeTextSelected
+              ]}>
+                Full Payment
+              </Text>
+              <Text style={styles.paymentTypeDesc}>Pay complete amount</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.paymentTypeCard,
+                paymentType === 'partial' && styles.paymentTypeCardSelected
+              ]}
+              onPress={() => setPaymentType('partial')}
+            >
+              <Ionicons 
+                name="cash" 
+                size={28} 
+                color={paymentType === 'partial' ? COLORS.primary[500] : COLORS.gray[400]} 
+              />
+              <Text style={[
+                styles.paymentTypeText,
+                paymentType === 'partial' && styles.paymentTypeTextSelected
+              ]}>
+                Partial Payment
+              </Text>
+              <Text style={styles.paymentTypeDesc}>Pay advance now</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.paymentTypeCard,
+                paymentType === 'pay_on_turf' && styles.paymentTypeCardSelected
+              ]}
+              onPress={() => {
+                setPaymentType('pay_on_turf');
+                setPaidAmount('0');
+              }}
+            >
+              <Ionicons 
+                name="location" 
+                size={28} 
+                color={paymentType === 'pay_on_turf' ? COLORS.primary[500] : COLORS.gray[400]} 
+              />
+              <Text style={[
+                styles.paymentTypeText,
+                paymentType === 'pay_on_turf' && styles.paymentTypeTextSelected
+              ]}>
+                Pay on Turf
+              </Text>
+              <Text style={styles.paymentTypeDesc}>Pay at venue</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {paymentType === 'partial' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Advance Amount</Text>
+            <Input
+              placeholder="Enter advance amount"
+              keyboardType="numeric"
+              value={paidAmount}
+              onChangeText={(text) => setPaidAmount(text)}
+            />
+            <View style={styles.advanceOptions}>
+              {[30, 50, 100].map((percent) => (
+                <TouchableOpacity
+                  key={percent}
+                  style={styles.advanceOption}
+                  onPress={() => {
+                    const total = parseFloat(calculateTotalAmount());
+                    const advance = (total * percent) / 100;
+                    setPaidAmount(advance.toFixed(2));
+                  }}
+                >
+                  <Text style={styles.advanceOptionText}>{percent}%</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
         {selectedSlots.length > 0 && (
           <View style={styles.summarySection}>
             <Card style={styles.summaryCard}>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Time</Text>
                 <Text style={styles.summaryValue}>
-                  {selectedSlots[0].start_time_display || selectedSlots[0].start_time} - {selectedSlots[selectedSlots.length - 1].end_time_display || selectedSlots[selectedSlots.length - 1].end_time}
+                  {formatTime(selectedSlots[0].start_time_display || selectedSlots[0].start_time)} - {formatTime(selectedSlots[selectedSlots.length - 1].end_time_display || selectedSlots[selectedSlots.length - 1].end_time)}
                 </Text>
               </View>
               <View style={styles.summaryRow}>
@@ -443,6 +617,26 @@ export default function CreateOfflineBookingScreen({ navigation }) {
                 <Text style={styles.summaryTotalLabel}>Total Amount</Text>
                 <Text style={styles.summaryAmount}>₹{calculateTotalAmount()}</Text>
               </View>
+              {paymentType === 'partial' && (
+                <>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Advance Paying</Text>
+                    <Text style={[styles.summaryValue, { color: COLORS.primary, fontWeight: '700' }]}>₹{paidAmount || '0'}</Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>To Collect at Turf</Text>
+                    <Text style={[styles.summaryValue, { color: '#F59E0B', fontWeight: '700' }]}>
+                      ₹{(parseFloat(calculateTotalAmount()) - parseFloat(paidAmount || 0)).toFixed(2)}
+                    </Text>
+                  </View>
+                </>
+              )}
+              {paymentType === 'pay_on_turf' && (
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>To Collect at Turf</Text>
+                  <Text style={[styles.summaryValue, { color: '#F59E0B', fontWeight: '700' }]}>₹{calculateTotalAmount()}</Text>
+                </View>
+              )}
             </Card>
           </View>
         )}
@@ -468,13 +662,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: SIZES.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    paddingHorizontal: SIZES.xl,
+    paddingVertical: SIZES.lg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    ...FONTS.h3,
-    color: COLORS.text,
+    ...FONTS.h2,
+    color: '#FFF',
+    fontWeight: '700',
   },
   content: {
     flex: 1,
@@ -485,12 +687,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...FONTS.h3,
-    color: COLORS.text,
+    color: COLORS.gray[900],
     marginBottom: SIZES.md,
+    fontWeight: '600',
   },
   label: {
     ...FONTS.caption,
-    color: COLORS.text,
+    color: COLORS.gray[900],
     marginBottom: SIZES.xs,
     fontWeight: '600',
   },
@@ -498,16 +701,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: SIZES.md,
+    padding: SIZES.lg,
     backgroundColor: '#FFF',
-    borderRadius: SIZES.radius,
+    borderRadius: 16,
     marginBottom: SIZES.sm,
     borderWidth: 2,
-    borderColor: COLORS.border,
+    borderColor: COLORS.gray[200],
+    ...SHADOWS.small,
   },
   turfOptionSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight,
+    borderColor: COLORS.primary[500],
+    backgroundColor: COLORS.primary[50],
   },
   turfInfo: {
     flex: 1,
@@ -515,11 +719,11 @@ const styles = StyleSheet.create({
   turfName: {
     ...FONTS.body,
     fontWeight: '600',
-    color: COLORS.text,
+    color: COLORS.gray[900],
   },
   turfLocation: {
     ...FONTS.caption,
-    color: COLORS.textSecondary,
+    color: COLORS.gray[600],
     marginTop: 2,
   },
   paymentGrid: {
@@ -531,30 +735,86 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: SIZES.md,
     backgroundColor: '#FFF',
-    borderRadius: SIZES.radius,
+    borderRadius: 12,
     borderWidth: 2,
-    borderColor: COLORS.border,
+    borderColor: COLORS.gray[200],
+    ...SHADOWS.small,
   },
   paymentCardSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight,
+    borderColor: COLORS.primary[500],
+    backgroundColor: COLORS.primary[50],
   },
   paymentCardText: {
     ...FONTS.caption,
-    color: COLORS.text,
+    color: COLORS.gray[700],
     fontWeight: '600',
     marginTop: SIZES.xs,
     textAlign: 'center',
   },
   paymentCardTextSelected: {
-    color: COLORS.primary,
+    color: COLORS.primary[600],
+  },
+  paymentTypeGrid: {
+    flexDirection: 'row',
+    gap: SIZES.sm,
+  },
+  paymentTypeCard: {
+    flex: 1,
+    alignItems: 'center',
+    padding: SIZES.md,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: COLORS.gray[200],
+    ...SHADOWS.small,
+  },
+  paymentTypeCardSelected: {
+    borderColor: COLORS.primary[500],
+    backgroundColor: COLORS.primary[50],
+  },
+  paymentTypeText: {
+    ...FONTS.caption,
+    color: COLORS.gray[700],
+    fontWeight: '600',
+    marginTop: SIZES.xs,
+    textAlign: 'center',
+  },
+  paymentTypeTextSelected: {
+    color: COLORS.primary[600],
+  },
+  paymentTypeDesc: {
+    ...FONTS.caption,
+    color: COLORS.gray[500],
+    textAlign: 'center',
+    marginTop: 2,
+    fontSize: 11,
+  },
+  advanceOptions: {
+    flexDirection: 'row',
+    gap: SIZES.sm,
+    marginTop: SIZES.sm,
+  },
+  advanceOption: {
+    flex: 1,
+    padding: SIZES.sm,
+    backgroundColor: COLORS.primary[50],
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.primary[500],
+  },
+  advanceOptionText: {
+    ...FONTS.body,
+    color: COLORS.primary[600],
+    fontWeight: '700',
   },
   summarySection: {
     padding: SIZES.lg,
   },
   summaryCard: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.gray[50],
     marginBottom: SIZES.md,
+    ...SHADOWS.medium,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -563,27 +823,27 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     ...FONTS.body,
-    color: COLORS.textSecondary,
+    color: COLORS.gray[600],
   },
   summaryValue: {
     ...FONTS.body,
-    color: COLORS.text,
+    color: COLORS.gray[900],
     fontWeight: '600',
   },
   summaryTotal: {
     marginTop: SIZES.xs,
     paddingTop: SIZES.md,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: COLORS.gray[200],
   },
   summaryTotalLabel: {
     ...FONTS.body,
-    color: COLORS.text,
+    color: COLORS.gray[900],
     fontWeight: '600',
   },
   summaryAmount: {
     ...FONTS.h2,
-    color: COLORS.primary,
+    color: COLORS.primary[600],
     fontWeight: '700',
   },
   buttonSection: {
@@ -596,32 +856,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: SIZES.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: SIZES.radius,
-    backgroundColor: COLORS.card,
+    borderColor: COLORS.gray[200],
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
     marginBottom: SIZES.md,
+    minHeight: 48,
   },
   dateText: {
     ...FONTS.body,
-    color: COLORS.text,
-  },
-  datePlaceholder: {
-    ...FONTS.body,
-    color: COLORS.textSecondary,
+    color: COLORS.gray[900],
+    fontWeight: '500',
   },
   loadingText: {
     ...FONTS.body,
-    color: COLORS.textSecondary,
+    color: COLORS.gray[600],
     textAlign: 'center',
     padding: SIZES.lg,
   },
   emptySlots: {
     ...FONTS.body,
-    color: COLORS.textSecondary,
+    color: COLORS.gray[600],
     textAlign: 'center',
     padding: SIZES.lg,
-    backgroundColor: COLORS.card,
-    borderRadius: SIZES.radius,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
   },
   slotsContainer: {
     flexDirection: 'row',
@@ -635,32 +893,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: SIZES.sm,
     paddingHorizontal: SIZES.md,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: COLORS.gray[200],
+    borderRadius: 10,
     backgroundColor: '#FFF',
     minWidth: '48%',
     maxWidth: '48%',
+    ...SHADOWS.small,
   },
   slotOptionSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: '#E0F2FE',
+    borderColor: COLORS.primary[500],
+    backgroundColor: COLORS.primary[50],
   },
   slotOptionBooked: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FCA5A5',
+    backgroundColor: COLORS.error[50],
+    borderColor: COLORS.error[300],
   },
   slotText: {
     ...FONTS.caption,
-    color: COLORS.text,
+    color: COLORS.gray[900],
     fontWeight: '600',
     fontSize: 13,
   },
   slotTextSelected: {
-    color: COLORS.primary,
+    color: COLORS.primary[600],
   },
   slotTextBooked: {
-    color: '#991B1B',
+    color: COLORS.error[700],
   },
   bookedInfo: {
     alignItems: 'flex-end',
@@ -683,10 +942,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   priceTag: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primary[500],
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 6,
   },
   priceText: {
     ...FONTS.caption,
@@ -716,5 +975,33 @@ const styles = StyleSheet.create({
     ...FONTS.caption,
     color: COLORS.textSecondary,
     marginTop: 4,
+  },
+  slotsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SIZES.sm,
+  },
+  slotsHeaderText: {
+    ...FONTS.caption,
+    color: COLORS.gray[600],
+    fontWeight: '500',
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SIZES.sm,
+    paddingVertical: SIZES.xs,
+    backgroundColor: COLORS.primary[50],
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.primary[200],
+  },
+  refreshButtonText: {
+    ...FONTS.caption,
+    color: COLORS.primary[600],
+    fontWeight: '600',
+    marginLeft: 4,
+    fontSize: 11,
   },
 });

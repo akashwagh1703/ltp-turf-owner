@@ -17,6 +17,7 @@ import Button from '../../components/common/Button';
 import { authService } from '../../services/authService';
 import { useAuth } from '../../contexts/AuthContext';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../constants/theme';
+import { IMAGE_PICKER_OPTIONS, prepareJpeg } from '../../utils/formData';
 
 const ACTION = '#E06C1F';
 const CREAM = '#F7F4EF';
@@ -38,10 +39,7 @@ export default function UpiSetupScreen({ navigation, route, blocking, onSkip }) 
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.8,
-    });
+    const result = await ImagePicker.launchImageLibraryAsync(IMAGE_PICKER_OPTIONS);
 
     if (result.canceled || !result.assets?.[0]) {
       return;
@@ -69,10 +67,7 @@ export default function UpiSetupScreen({ navigation, route, blocking, onSkip }) 
       const formData = new FormData();
       formData.append('upi_id', trimmed);
       if (picked) {
-        const uri = picked.uri;
-        const name = picked.fileName || 'upi-qr.jpg';
-        const type = picked.mimeType || 'image/jpeg';
-        formData.append('qr', { uri, name, type });
+        formData.append('qr', await prepareJpeg(picked));
       }
 
       const response = await authService.updateUpi(formData);

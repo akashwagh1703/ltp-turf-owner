@@ -1,4 +1,5 @@
 import api from './api';
+import { postMultipart } from './upload';
 
 export const authService = {
   sendOtp: (phone) => api.post('/auth/send-otp', { phone }),
@@ -6,5 +7,5 @@ export const authService = {
   logout: () => api.post('/auth/logout'),
   getMe: () => api.get('/me'),
   updateProfile: (data) => api.put('/auth/profile', data),
-  updateUpi: (formData) => api.post('/auth/profile', formData),
+  updateUpi: (formData) => postMultipart('/auth/upi', formData),
 };

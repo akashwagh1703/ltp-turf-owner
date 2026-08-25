@@ -1,4 +1,5 @@
 import api from './api';
+import { postMultipart } from './upload';
 
 export const turfService = {
   getTurfs: () => api.get('/turfs'),
@@ -6,7 +7,7 @@ export const turfService = {
   createDraft: () => api.post('/turfs'),
   updateTurf: (id, data) => api.post(`/turfs/${id}`, data),
   submitTurf: (id) => api.post(`/turfs/${id}/submit`),
-  uploadPhoto: (id, formData) => api.post(`/turfs/${id}/images`, formData),
+  uploadPhoto: (id, formData) => postMultipart(`/turfs/${id}/images`, formData),
   deletePhoto: (id, imageId) => api.delete(`/turfs/${id}/images/${imageId}`),
   requestUpdate: (id, updates) => api.post(`/turfs/${id}/request-update`, { updates }),
   getUpdateRequests: () => api.get('/turf-update-requests'),

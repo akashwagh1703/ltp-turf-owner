@@ -63,8 +63,14 @@ export default function CreateOfflineBookingScreen({ navigation }) {
     try {
       const response = await turfService.getTurfs();
       const turfsData = Array.isArray(response.data) ? response.data : (response.data.data || []);
-      const activeTurfs = turfsData.filter(turf => turf.status !== 'suspended');
+      const activeTurfs = turfsData.filter((turf) => turf.status === 'approved');
       setTurfs(activeTurfs);
+      if (activeTurfs.length === 0) {
+        Alert.alert(
+          'No live turfs yet',
+          'Submit your turf to LTP first. Walk-in bookings open after LTP approves it.'
+        );
+      }
     } catch (error) {
       console.error('❌ Load turfs error:', error.response?.data || error.message);
       Alert.alert('Error', 'Failed to load turfs for booking.');
@@ -288,11 +294,13 @@ export default function CreateOfflineBookingScreen({ navigation }) {
             errorMessage = 'Selected slots are unavailable. Please select again.';
           }
         } else if (status === 422) {
-          errorMessage = 'Invalid booking information. Please check all fields.';
+          errorMessage = data.message || 'Invalid booking information. Please check all fields.';
         } else if (status === 500) {
           errorMessage = 'Server error. Please try again in a moment.';
-        } else if (status === 401 || status === 403) {
+        } else if (status === 401) {
           errorMessage = 'Session expired. Please login again.';
+        } else if (status === 403) {
+          errorMessage = data.message || 'This turf is not live yet. Wait for LTP to approve it.';
         }
       } else if (error.request) {
         errorMessage = 'Network error. Please check your connection.';
@@ -317,7 +325,12 @@ export default function CreateOfflineBookingScreen({ navigation }) {
       <ScrollView style={styles.content}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Select Turf</Text>
-          {turfs.map((turf) => (
+          {turfs.length === 0 ? (
+            <Text style={styles.emptyTurfs}>
+              Wait for LTP to approve your turf before adding bookings.
+            </Text>
+          ) : (
+            turfs.map((turf) => (
             <TouchableOpacity
               key={turf.id}
               style={[
@@ -334,7 +347,8 @@ export default function CreateOfflineBookingScreen({ navigation }) {
                 <Ionicons name="checkmark-circle" size={24} color={COLORS.primary[500]} />
               )}
             </TouchableOpacity>
-          ))}
+          ))
+          )}
         </View>
 
         <View style={styles.section}>
@@ -690,6 +704,14 @@ const styles = StyleSheet.create({
     color: COLORS.gray[900],
     marginBottom: SIZES.md,
     fontWeight: '600',
+  },
+  emptyTurfs: {
+    ...FONTS.body,
+    color: COLORS.gray[600],
+    lineHeight: 22,
+    backgroundColor: '#FFF7ED',
+    padding: SIZES.md,
+    borderRadius: 12,
   },
   label: {
     ...FONTS.caption,

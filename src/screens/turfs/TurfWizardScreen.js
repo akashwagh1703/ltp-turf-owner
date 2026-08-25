@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useFocusEffect } from '@react-navigation/native';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import { turfService } from '../../services/turfService';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../constants/theme';
+import { IMAGE_PICKER_OPTIONS, prepareJpeg } from '../../utils/formData';
 
 const ACTION = '#E06C1F';
 const CREAM = '#F7F4EF';
@@ -91,8 +91,8 @@ export default function TurfWizardScreen({ navigation, route }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      if (turfId) {
-        const res = await turfService.getTurf(turfId);
+      if (route.params?.id) {
+        const res = await turfService.getTurf(route.params.id);
         applyTurf(res.data?.data || res.data);
       } else {
         const res = await turfService.createDraft();
@@ -104,13 +104,11 @@ export default function TurfWizardScreen({ navigation, route }) {
     } finally {
       setLoading(false);
     }
-  }, [turfId]);
+  }, [navigation, route.params?.id]);
 
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load])
-  );
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const payload = () => ({
     name: form.name.trim() || 'Untitled turf',
@@ -158,6 +156,21 @@ export default function TurfWizardScreen({ navigation, route }) {
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
+      const code = error.response?.data?.error?.code;
+      if (code === 'UPI_REQUIRED') {
+        Alert.alert(
+          'Add UPI first',
+          error.response?.data?.message || 'Add your UPI ID and QR before submitting this turf to LTP.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Add UPI',
+              onPress: () => navigation.navigate('Profile', { screen: 'UpiSetup' }),
+            },
+          ]
+        );
+        return;
+      }
       Alert.alert('Cannot submit', error.response?.data?.message || 'Finish the missing fields.');
     } finally {
       setSaving(false);
@@ -171,17 +184,13 @@ export default function TurfWizardScreen({ navigation, route }) {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      ...IMAGE_PICKER_OPTIONS,
       quality: 0.7,
     });
     if (result.canceled || !result.assets?.[0] || !turfId) return;
     const asset = result.assets[0];
     const formData = new FormData();
-    formData.append('photo', {
-      uri: asset.uri,
-      name: asset.fileName || 'turf.jpg',
-      type: asset.mimeType || 'image/jpeg',
-    });
+    formData.append('photo', await prepareJpeg(asset));
     setSaving(true);
     try {
       await turfService.uploadPhoto(turfId, formData);
@@ -254,7 +263,7 @@ export default function TurfWizardScreen({ navigation, route }) {
       ) : null}
       {waiting ? (
         <View style={styles.waitBanner}>
-          <Text style={styles.waitText}>Waiting for LTP to review…</Text>
+          <Text style={styles.waitText}>Waiting for LTP to review. Bookings open only after approval.</Text>
         </View>
       ) : null}
 

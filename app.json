@@ -31,12 +31,7 @@
         "backgroundColor": "#10B981"
       }
     },
-    "owner": "playltpv3",
-    "extra": {
-      "eas": {
-        "projectId": "f36cf45d-4ca3-4a95-a684-1ab4fadff76f"
-      }
-    },
+    "owner": "akashwagh",
     "plugins": [
       [
         "expo-notifications",
@@ -45,6 +40,11 @@
           "color": "#1F7A4C"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "f74f0914-7605-4369-8914-9994d3d25e32"
+      }
+    }
   }
 }

@@ -28,7 +28,9 @@ export default function DashboardScreen({ navigation }) {
       ]);
       
       const statsData = statsRes.data.data || statsRes.data;
-      const bookingsData = Array.isArray(bookingsRes.data) ? bookingsRes.data : (bookingsRes.data.data || []);
+      const bookingsData = Array.isArray(bookingsRes.data)
+        ? bookingsRes.data
+        : (bookingsRes.data.data || []);
       
       setStats(statsData);
       setBookings(bookingsData);
@@ -253,8 +255,8 @@ export default function DashboardScreen({ navigation }) {
                       <View style={[styles.badge, styles[`badge_${booking.booking_type}`]]}>
                         <Text style={[styles.badgeText, styles[`badgeText_${booking.booking_type}`]]}>{booking.booking_type}</Text>
                       </View>
-                      <View style={[styles.statusBadge, styles[`status_${booking.booking_status}`]]}>
-                        <Text style={[styles.statusText, styles[`statusText_${booking.booking_status}`]]}>{booking.booking_status}</Text>
+                      <View style={[styles.statusBadge, styles[`status_${booking.status || booking.booking_status}`]]}>
+                        <Text style={[styles.statusText, styles[`statusText_${booking.status || booking.booking_status}`]]}>{booking.status || booking.booking_status}</Text>
                       </View>
                     </View>
                   </View>

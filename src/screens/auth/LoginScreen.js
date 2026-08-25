@@ -143,6 +143,7 @@ export default function LoginScreen() {
                       onChangeText={setOtp}
                       style={styles.otpInput}
                     />
+                    <Text style={styles.otpHint}>For now, use 999999</Text>
                   </View>
 
                   <Button 
@@ -305,6 +306,13 @@ const styles = StyleSheet.create({
     fontSize: 24,
     letterSpacing: 8,
     fontWeight: '600',
+  },
+  otpHint: {
+    ...FONTS.small,
+    color: COLORS.gray[500],
+    textAlign: 'center',
+    marginTop: SIZES.sm,
+    marginBottom: SIZES.md,
   },
   button: {
     marginBottom: SIZES.md,

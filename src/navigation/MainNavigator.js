@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import DashboardScreen from '../screens/dashboard/DashboardScreen';
 import TurfsScreen from '../screens/turfs/TurfsScreen';
 import TurfDetailScreen from '../screens/turfs/TurfDetailScreen';
+import TurfUpdateRequestScreen from '../screens/turfs/TurfUpdateRequestScreen';
+import UpdateRequestHistoryScreen from '../screens/turfs/UpdateRequestHistoryScreen';
 import BookingsScreen from '../screens/bookings/BookingsScreen';
 import CreateOfflineBookingScreen from '../screens/bookings/CreateOfflineBookingScreen';
 import PayoutsScreen from '../screens/payouts/PayoutsScreen';
@@ -28,6 +30,8 @@ function TurfsStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="TurfsList" component={TurfsScreen} />
       <Stack.Screen name="TurfDetail" component={TurfDetailScreen} />
+      <Stack.Screen name="TurfUpdateRequest" component={TurfUpdateRequestScreen} />
+      <Stack.Screen name="UpdateRequestHistory" component={UpdateRequestHistoryScreen} />
     </Stack.Navigator>
   );
 }

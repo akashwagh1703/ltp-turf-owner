@@ -37,11 +37,7 @@ export default function TurfDetailScreen({ route, navigation }) {
   };
 
   const handleRequestUpdate = () => {
-    Alert.alert(
-      'Request Update',
-      'Contact admin to update turf details',
-      [{ text: 'OK' }]
-    );
+    navigation.navigate('TurfUpdateRequest', { turf });
   };
 
   if (loading || !turf) {
@@ -156,6 +152,13 @@ export default function TurfDetailScreen({ route, navigation }) {
           title="Request Update" 
           onPress={handleRequestUpdate}
           style={styles.updateButton}
+        />
+        
+        <Button 
+          title="View Update History" 
+          onPress={() => navigation.navigate('UpdateRequestHistory')}
+          variant="outline"
+          style={[styles.updateButton, { marginTop: 0 }]}
         />
       </ScrollView>
     </SafeAreaView>

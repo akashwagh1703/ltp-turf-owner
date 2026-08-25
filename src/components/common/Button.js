@@ -22,13 +22,16 @@ const styles = StyleSheet.create({
   button: {
     paddingVertical: SIZES.md + 2,
     paddingHorizontal: SIZES.lg,
-    borderRadius: 12,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 48,
   },
   primary: {
-    backgroundColor: COLORS.primary[500],
+    backgroundColor: COLORS.action,
+  },
+  action: {
+    backgroundColor: '#E06C1F',
   },
   secondary: {
     backgroundColor: COLORS.gray[100],
@@ -40,6 +43,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   primaryText: {
+    color: '#FFFFFF',
+  },
+  actionText: {
     color: '#FFFFFF',
   },
   secondaryText: {

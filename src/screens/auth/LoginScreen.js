@@ -143,10 +143,6 @@ export default function LoginScreen() {
                       onChangeText={setOtp}
                       style={styles.otpInput}
                     />
-                    <View style={styles.otpHintBox}>
-                      <Ionicons name="information-circle" size={16} color={COLORS.info} />
-                      <Text style={styles.otpHint}>Development OTP: 999999</Text>
-                    </View>
                   </View>
 
                   <Button 
@@ -161,7 +157,7 @@ export default function LoginScreen() {
                     style={styles.resendButton}
                     disabled={loading}
                   >
-                    <Ionicons name="refresh" size={16} color={COLORS.primary} />
+                    <Ionicons name="refresh" size={16} color={COLORS.primary[600]} />
                     <Text style={styles.resendText}>Resend OTP</Text>
                   </TouchableOpacity>
                 </>
@@ -172,19 +168,19 @@ export default function LoginScreen() {
             <View style={styles.features}>
               <View style={styles.feature}>
                 <View style={styles.featureIcon}>
-                  <Ionicons name="shield-checkmark" size={20} color={COLORS.primary} />
+                  <Ionicons name="shield-checkmark" size={20} color={COLORS.primary[600]} />
                 </View>
                 <Text style={styles.featureText}>Secure Login</Text>
               </View>
               <View style={styles.feature}>
                 <View style={styles.featureIcon}>
-                  <Ionicons name="flash" size={20} color={COLORS.primary} />
+                  <Ionicons name="flash" size={20} color={COLORS.primary[600]} />
                 </View>
                 <Text style={styles.featureText}>Quick Access</Text>
               </View>
               <View style={styles.feature}>
                 <View style={styles.featureIcon}>
-                  <Ionicons name="lock-closed" size={20} color={COLORS.primary} />
+                  <Ionicons name="lock-closed" size={20} color={COLORS.primary[600]} />
                 </View>
                 <Text style={styles.featureText}>Data Protected</Text>
               </View>
@@ -309,21 +305,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     letterSpacing: 8,
     fontWeight: '600',
-  },
-  otpHintBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SIZES.xs,
-    marginTop: SIZES.md,
-    padding: SIZES.sm,
-    backgroundColor: COLORS.primary[50],
-    borderRadius: SIZES.radiusSm,
-  },
-  otpHint: {
-    ...FONTS.caption,
-    color: COLORS.primary[700],
-    fontWeight: '500',
   },
   button: {
     marginBottom: SIZES.md,

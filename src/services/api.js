@@ -15,7 +15,12 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log('🚀 API Request:', config.method.toUpperCase(), config.url, config.data || config.params || '');
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+    if (__DEV__) {
+      console.log('🚀 API Request:', config.method.toUpperCase(), config.url);
+    }
     return config;
   },
   (error) => Promise.reject(error)

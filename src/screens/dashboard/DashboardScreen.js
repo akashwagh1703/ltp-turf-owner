@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../constants/theme';
 
 export default function DashboardScreen({ navigation }) {
+  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -64,6 +65,34 @@ export default function DashboardScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        {!user?.has_upi && (
+          <TouchableOpacity
+            style={styles.upiBanner}
+            onPress={() => navigation.navigate('Profile', { screen: 'UpiSetup' })}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="qr-code-outline" size={22} color="#9A3412" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.upiBannerTitle}>Add UPI to take bookings</Text>
+              <Text style={styles.upiBannerBody}>Players pay you by scanning your QR</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#9A3412" />
+          </TouchableOpacity>
+        )}
+        {stats && stats.can_accept_online_bookings === false && (
+          <TouchableOpacity
+            style={styles.upiBanner}
+            onPress={() => navigation.navigate('Money', { screen: 'PayLtp' })}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="card-outline" size={22} color="#9A3412" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.upiBannerTitle}>Pay Let’s Turf Play</Text>
+              <Text style={styles.upiBannerBody}>Online bookings are paused until the fee is confirmed</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#9A3412" />
+          </TouchableOpacity>
+        )}
         <View style={styles.statsContainer}>
           {loading && !stats ? (
             <>
@@ -80,13 +109,13 @@ export default function DashboardScreen({ navigation }) {
             </View>
             <View style={styles.summaryStats}>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryNumber}>{stats?.today_bookings || 0}</Text>
-                <Text style={styles.summaryLabel}>Bookings</Text>
+                <Text style={[styles.summaryNumber, { color: '#E06C1F' }]}>{stats?.awaiting_confirmation || 0}</Text>
+                <Text style={styles.summaryLabel}>Need confirm</Text>
               </View>
               <View style={styles.summaryDivider} />
               <View style={styles.summaryItem}>
-                <Text style={[styles.summaryNumber, { color: '#10B981' }]}>₹{parseFloat(stats?.total_revenue || 0).toFixed(0)}</Text>
-                <Text style={styles.summaryLabel}>Earned</Text>
+                <Text style={styles.summaryNumber}>{stats?.today_bookings || 0}</Text>
+                <Text style={styles.summaryLabel}>Today</Text>
               </View>
             </View>
           </View>
@@ -108,8 +137,8 @@ export default function DashboardScreen({ navigation }) {
 
             <TouchableOpacity style={[styles.quickStatCard, { backgroundColor: '#FEF3C7' }]} onPress={() => navigation.navigate('Bookings')} activeOpacity={0.7}>
               <Ionicons name="hourglass" size={32} color="#F59E0B" />
-              <Text style={styles.quickStatNumber}>{stats?.pending_bookings || 0}</Text>
-              <Text style={styles.quickStatLabel}>Waiting</Text>
+              <Text style={styles.quickStatNumber}>{stats?.awaiting_confirmation || stats?.pending_bookings || 0}</Text>
+              <Text style={styles.quickStatLabel}>Need confirm</Text>
             </TouchableOpacity>
           </View>
 
@@ -117,7 +146,7 @@ export default function DashboardScreen({ navigation }) {
           <View style={styles.moneySection}>
             <Text style={styles.sectionTitle}>Money</Text>
             <View style={styles.moneyCards}>
-              <TouchableOpacity style={styles.moneyCard} onPress={() => navigation.navigate('Payouts')} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.moneyCard} onPress={() => navigation.navigate('Money')} activeOpacity={0.7}>
                 <View style={styles.moneyCardHeader}>
                   <Ionicons name="checkmark-circle" size={28} color="#10B981" />
                   <Text style={styles.moneyCardLabel}>Received</Text>
@@ -269,6 +298,26 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     marginTop: -20,
+  },
+  upiBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SIZES.sm,
+    marginHorizontal: SIZES.lg,
+    marginTop: SIZES.lg,
+    backgroundColor: '#FFEDD5',
+    borderRadius: 12,
+    padding: SIZES.md,
+  },
+  upiBannerTitle: {
+    ...FONTS.body,
+    fontWeight: '700',
+    color: '#9A3412',
+  },
+  upiBannerBody: {
+    ...FONTS.caption,
+    color: '#9A3412',
+    marginTop: 2,
   },
   statsContainer: {
     paddingHorizontal: SIZES.lg,
@@ -473,7 +522,7 @@ const styles = StyleSheet.create({
   },
   seeAll: {
     ...FONTS.captionMedium,
-    color: COLORS.primary,
+    color: COLORS.primary[600],
   },
   emptyCard: {
     alignItems: 'center',

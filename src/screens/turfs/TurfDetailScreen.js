@@ -7,9 +7,15 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import { turfService } from '../../services/turfService';
 import { COLORS, SIZES, FONTS, GRADIENTS, SHADOWS } from '../../constants/theme';
-import { BASE_URL } from '../../constants/config';
 
 const { width } = Dimensions.get('window');
+
+const STATUS_LABEL = {
+  draft: 'Draft',
+  pending: 'Waiting for LTP',
+  approved: 'Live',
+  suspended: 'Suspended',
+};
 
 export default function TurfDetailScreen({ route, navigation }) {
   const { id } = route.params;
@@ -36,8 +42,8 @@ export default function TurfDetailScreen({ route, navigation }) {
     }
   };
 
-  const handleRequestUpdate = () => {
-    navigation.navigate('TurfUpdateRequest', { turf });
+  const handleEdit = () => {
+    navigation.navigate('TurfWizard', { id: turf.id });
   };
 
   if (loading || !turf) {
@@ -68,7 +74,7 @@ export default function TurfDetailScreen({ route, navigation }) {
         <Card style={styles.card}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>{turf.name}</Text>
-            <Text style={[styles.status, styles[turf.status]]}>{turf.status}</Text>
+            <Text style={[styles.status, styles[turf.status]]}>{STATUS_LABEL[turf.status] || turf.status}</Text>
           </View>
           <Text style={styles.description}>{turf.description}</Text>
         </Card>
@@ -120,15 +126,11 @@ export default function TurfDetailScreen({ route, navigation }) {
             <Text style={styles.sectionTitle}>Images ({turf.images.length})</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagesScroll}>
               {turf.images.map((image, index) => {
-                let imageUrl = image.image_url || image.url || image;
-                
-                // If URL doesn't start with http, construct full URL
-                if (imageUrl && !imageUrl.startsWith('http')) {
-                  imageUrl = `${BASE_URL}/storage/${image.image_path || imageUrl}`;
+                const imageUrl = image.image_url || image.url;
+                if (!imageUrl) {
+                  return null;
                 }
-                
-                console.log(`🖼️ Image ${index}:`, imageUrl);
-                
+
                 return (
                   <View key={index} style={styles.imageContainer}>
                     <Image
@@ -149,16 +151,9 @@ export default function TurfDetailScreen({ route, navigation }) {
         )}
 
         <Button 
-          title="Request Update" 
-          onPress={handleRequestUpdate}
+          title="Edit turf" 
+          onPress={handleEdit}
           style={styles.updateButton}
-        />
-        
-        <Button 
-          title="View Update History" 
-          onPress={() => navigation.navigate('UpdateRequestHistory')}
-          variant="outline"
-          style={[styles.updateButton, { marginTop: 0 }]}
         />
       </ScrollView>
     </SafeAreaView>
@@ -167,7 +162,7 @@ export default function TurfDetailScreen({ route, navigation }) {
 
 const InfoRow = ({ icon, label, value }) => (
   <View style={styles.infoRow}>
-    <Ionicons name={icon} size={20} color={COLORS.primary} />
+    <Ionicons name={icon} size={20} color={COLORS.primary[600]} />
     <View style={styles.infoContent}>
       {label ? <Text style={styles.infoLabel}>{label}</Text> : null}
       <Text style={styles.infoValue}>{value}</Text>
@@ -235,6 +230,10 @@ const styles = StyleSheet.create({
   pending: {
     backgroundColor: COLORS.warning[100],
     color: COLORS.warning[700],
+  },
+  draft: {
+    backgroundColor: COLORS.gray[200],
+    color: COLORS.gray[700],
   },
   suspended: {
     backgroundColor: COLORS.error[100],

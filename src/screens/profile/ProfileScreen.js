@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/common/Card';
 import { COLORS, SIZES, FONTS, GRADIENTS, SHADOWS } from '../../constants/theme';
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }) {
   const { user, logout } = useAuth();
 
   const handleLogout = () => {
@@ -26,9 +26,21 @@ export default function ProfileScreen() {
   };
 
   const menuItems = [
+    {
+      icon: 'qr-code-outline',
+      label: 'My UPI',
+      badge: user?.has_upi ? 'Ready' : 'Required',
+      badgeReady: !!user?.has_upi,
+      onPress: () => navigation.navigate('UpiSetup'),
+    },
+    {
+      icon: 'card-outline',
+      label: 'Pay Let’s Turf Play',
+      onPress: () => navigation.getParent()?.navigate('Money', { screen: 'PayLtp' }),
+    },
     { icon: 'person-outline', label: 'Edit Profile', onPress: () => Alert.alert('Coming Soon', 'This feature will be available soon') },
     { icon: 'help-circle-outline', label: 'Help & Support', onPress: () => Alert.alert('Coming Soon', 'This feature will be available soon') },
-    { icon: 'information-circle-outline', label: 'About', onPress: () => Alert.alert('About', 'Turf Owner App v1.0.0') },
+    { icon: 'information-circle-outline', label: 'About', onPress: () => Alert.alert('About', 'Let’s Turf Play — Owner') },
   ];
 
   return (
@@ -57,7 +69,14 @@ export default function ProfileScreen() {
                 <Ionicons name={item.icon} size={24} color={COLORS.textSecondary} />
                 <Text style={styles.menuLabel}>{item.label}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
+              <View style={styles.menuRight}>
+                {item.badge ? (
+                  <Text style={[styles.badge, item.badgeReady ? styles.badgeReady : styles.badgeNeed]}>
+                    {item.badge}
+                  </Text>
+                ) : null}
+                <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
+              </View>
             </TouchableOpacity>
           ))}
         </View>
@@ -134,6 +153,27 @@ const styles = StyleSheet.create({
   menuLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+  },
+  menuRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SIZES.sm,
+  },
+  badge: {
+    ...FONTS.small,
+    fontWeight: '700',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  badgeReady: {
+    backgroundColor: '#D1FAE5',
+    color: '#047857',
+  },
+  badgeNeed: {
+    backgroundColor: '#FFEDD5',
+    color: '#C2410C',
   },
   menuLabel: {
     ...FONTS.body,

@@ -7,5 +7,6 @@ export const bookingService = {
   completeBooking: (id) => api.post(`/bookings/${id}/complete`),
   markNoShow: (id) => api.post(`/bookings/${id}/no-show`),
   confirmPayment: (id, amount) => api.post(`/bookings/${id}/confirm-payment`, amount ? { amount } : {}),
+  rejectPayment: (id, reason) => api.post(`/bookings/${id}/reject-payment`, reason ? { reason } : {}),
   getStats: () => api.get('/bookings/stats'),
 };

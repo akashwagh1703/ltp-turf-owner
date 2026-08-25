@@ -5,12 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 import DashboardScreen from '../screens/dashboard/DashboardScreen';
 import TurfsScreen from '../screens/turfs/TurfsScreen';
 import TurfDetailScreen from '../screens/turfs/TurfDetailScreen';
-import TurfUpdateRequestScreen from '../screens/turfs/TurfUpdateRequestScreen';
-import UpdateRequestHistoryScreen from '../screens/turfs/UpdateRequestHistoryScreen';
+import TurfWizardScreen from '../screens/turfs/TurfWizardScreen';
 import BookingsScreen from '../screens/bookings/BookingsScreen';
 import CreateOfflineBookingScreen from '../screens/bookings/CreateOfflineBookingScreen';
-import PayoutsScreen from '../screens/payouts/PayoutsScreen';
+import MoneyScreen from '../screens/money/MoneyScreen';
+import PayLtpScreen from '../screens/money/PayLtpScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
+import UpiSetupScreen from '../screens/account/UpiSetupScreen';
+import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/theme';
 
 const Tab = createBottomTabNavigator();
@@ -30,8 +32,7 @@ function TurfsStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="TurfsList" component={TurfsScreen} />
       <Stack.Screen name="TurfDetail" component={TurfDetailScreen} />
-      <Stack.Screen name="TurfUpdateRequest" component={TurfUpdateRequestScreen} />
-      <Stack.Screen name="UpdateRequestHistory" component={UpdateRequestHistoryScreen} />
+      <Stack.Screen name="TurfWizard" component={TurfWizardScreen} />
     </Stack.Navigator>
   );
 }
@@ -45,7 +46,37 @@ function BookingsStack() {
   );
 }
 
+function MoneyStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MoneyHome" component={MoneyScreen} />
+      <Stack.Screen name="PayLtp" component={PayLtpScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function ProfileStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="ProfileHome" component={ProfileScreen} />
+      <Stack.Screen name="UpiSetup" component={UpiSetupScreen} />
+    </Stack.Navigator>
+  );
+}
+
 export default function MainNavigator() {
+  const { user } = useAuth();
+  const [upiSkipped, setUpiSkipped] = React.useState(false);
+
+  if (user && !user.has_upi && !upiSkipped) {
+    return (
+      <UpiSetupScreen
+        blocking
+        onSkip={() => setUpiSkipped(true)}
+      />
+    );
+  }
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -55,19 +86,19 @@ export default function MainNavigator() {
           if (route.name === 'Dashboard') iconName = focused ? 'home' : 'home-outline';
           else if (route.name === 'Turfs') iconName = focused ? 'football' : 'football-outline';
           else if (route.name === 'Bookings') iconName = focused ? 'calendar' : 'calendar-outline';
-          else if (route.name === 'Payouts') iconName = focused ? 'wallet' : 'wallet-outline';
+          else if (route.name === 'Money') iconName = focused ? 'wallet' : 'wallet-outline';
           else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: COLORS.primary,
+        tabBarActiveTintColor: COLORS.primary[600],
         tabBarInactiveTintColor: COLORS.textSecondary,
       })}
     >
       <Tab.Screen name="Dashboard" component={DashboardStack} />
       <Tab.Screen name="Turfs" component={TurfsStack} />
       <Tab.Screen name="Bookings" component={BookingsStack} />
-      <Tab.Screen name="Payouts" component={PayoutsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Money" component={MoneyStack} />
+      <Tab.Screen name="Profile" component={ProfileStack} />
     </Tab.Navigator>
   );
 }

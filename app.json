@@ -20,6 +20,7 @@
     },
     "android": {
       "package": "com.playltp.ltpturfowner",
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.playltp.ltpturfowner",
       "versionCode": 1,
       "permissions": [
         "INTERNET",
@@ -35,6 +36,15 @@
       "eas": {
         "projectId": "f36cf45d-4ca3-4a95-a684-1ab4fadff76f"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#1F7A4C"
+        }
+      ]
+    ]
   }
 }

@@ -621,7 +621,7 @@ export default function CreateOfflineBookingScreen({ navigation }) {
                 <>
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>Advance Paying</Text>
-                    <Text style={[styles.summaryValue, { color: COLORS.primary, fontWeight: '700' }]}>₹{paidAmount || '0'}</Text>
+                    <Text style={[styles.summaryValue, { color: COLORS.primary[600], fontWeight: '700' }]}>₹{paidAmount || '0'}</Text>
                   </View>
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>To Collect at Turf</Text>
@@ -968,7 +968,7 @@ const styles = StyleSheet.create({
   },
   amountText: {
     ...FONTS.h2,
-    color: COLORS.primary,
+    color: COLORS.primary[600],
     fontWeight: '700',
   },
   amountDetail: {

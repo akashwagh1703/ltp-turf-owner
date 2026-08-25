@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Alert, Modal, ScrollView, Animated } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Alert, Modal, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import Card from '../../components/common/Card';
+import { useFocusEffect } from '@react-navigation/native';
 import Button from '../../components/common/Button';
 import { bookingService } from '../../services/bookingService';
 import { COLORS, SIZES, FONTS, GRADIENTS, SHADOWS } from '../../constants/theme';
@@ -19,9 +19,11 @@ export default function BookingsScreen({ navigation }) {
     date: 'today'
   });
 
-  useEffect(() => {
-    loadBookings();
-  }, [filters]);
+  useFocusEffect(
+    useCallback(() => {
+      loadBookings();
+    }, [filters])
+  );
 
   const loadBookings = async () => {
     setLoading(true);
@@ -30,7 +32,15 @@ export default function BookingsScreen({ navigation }) {
       if (filters.status !== 'all') params.status = filters.status;
       if (filters.booking_type !== 'all') params.booking_type = filters.booking_type;
       if (filters.payment_status !== 'all') params.payment_status = filters.payment_status;
-      if (filters.date === 'today') params.date = new Date().toISOString().split('T')[0];
+      if (filters.date === 'today' && filters.status !== 'needs_confirmation') {
+        params.date = new Date().toISOString().split('T')[0];
+      } else if (filters.date === 'tomorrow') {
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        params.date = d.toISOString().split('T')[0];
+      } else if (filters.date === 'today') {
+        params.date = new Date().toISOString().split('T')[0];
+      }
       const response = await bookingService.getBookings(params);
       console.log('📊 Bookings Response:', response.data);
       const bookingsData = Array.isArray(response.data) ? response.data : (response.data.data || []);
@@ -141,7 +151,11 @@ export default function BookingsScreen({ navigation }) {
       paymentDetails += `\nType: ${booking.payment_type || 'full'}`;
     }
     
-    if (booking.status === 'confirmed') {
+    if (needsConfirm(booking)) {
+      actions.push({ text: 'Received', onPress: () => handleReceived(booking) });
+      actions.push({ text: 'Not received', onPress: () => handleNotReceived(booking) });
+      actions.push({ text: 'Cancel', style: 'destructive', onPress: () => handleCancelBooking(booking) });
+    } else if (booking.status === 'confirmed') {
       if (booking.payment_status === 'pending' && booking.pending_amount > 0) {
         actions.push({ text: 'Confirm Payment', onPress: () => handleConfirmPayment(booking) });
       }
@@ -154,7 +168,7 @@ export default function BookingsScreen({ navigation }) {
     
     Alert.alert(
       `Booking #${booking.booking_number}`,
-      `Player: ${booking.player_name}\nPhone: ${booking.player_phone}\nTurf: ${booking.turf?.name}\nDate: ${booking.booking_date}\nTime: ${booking.start_time} - ${booking.end_time}\nDuration: ${booking.slot_duration} min\nAmount: ₹${booking.final_amount || booking.amount}${paymentDetails}\nType: ${booking.booking_type}\nStatus: ${booking.status === 'no_show' ? 'No Show' : booking.status}\nPayment: ${booking.payment_status}`,
+      `Player: ${booking.player_name}\nPhone: ${booking.player_phone}\nTurf: ${booking.turf?.name}\nDate: ${booking.booking_date}\nTime: ${booking.start_time} - ${booking.end_time}\nDuration: ${booking.slot_duration} min\nAmount: ₹${booking.final_amount || booking.amount}${paymentDetails}\nType: ${booking.booking_type}\nStatus: ${statusLabel(booking.status)}\nPayment: ${booking.payment_status}`,
       actions
     );
   };
@@ -178,12 +192,12 @@ export default function BookingsScreen({ navigation }) {
     try {
       const response = await bookingService.confirmPayment(id, amount);
       const paymentDetails = response.data?.payment_details;
-      
-      let message = 'Payment confirmed successfully';
-      if (paymentDetails) {
+
+      let message = response.data?.message || 'Payment confirmed successfully';
+      if (paymentDetails && !response.data?.message) {
         message = `Payment Confirmed!\n\nPreviously Paid: ₹${paymentDetails.previous_paid_amount}\nJust Received: ₹${paymentDetails.additional_amount_paid}\nTotal Paid: ₹${paymentDetails.total_paid_amount}\nRemaining: ₹${paymentDetails.remaining_amount}`;
       }
-      
+
       Alert.alert('Success', message);
       loadBookings();
     } catch (error) {
@@ -192,6 +206,62 @@ export default function BookingsScreen({ navigation }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const needsConfirm = (booking) =>
+    booking.status === 'awaiting_confirmation' || booking.status === 'pay_on_arrival';
+
+  const statusLabel = (status) => {
+    switch (status) {
+      case 'awaiting_confirmation':
+        return 'Needs confirm';
+      case 'pay_on_arrival':
+        return 'Pay at turf';
+      case 'no_show':
+        return 'No Show';
+      case 'expired':
+        return 'Expired';
+      default:
+        return status;
+    }
+  };
+
+  const handleReceived = (booking) => {
+    const amount = booking.final_amount || booking.amount;
+    Alert.alert(
+      'Did the money arrive?',
+      `Did ₹${amount} arrive from ${booking.player_name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Received', onPress: () => confirmPayment(booking.id) },
+      ]
+    );
+  };
+
+  const handleNotReceived = (booking) => {
+    Alert.alert(
+      'Not received',
+      `Tell ${booking.player_name} that ₹${booking.final_amount || booking.amount} has not arrived yet?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Not received',
+          style: 'destructive',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              await bookingService.rejectPayment(booking.id);
+              Alert.alert('Told the player', 'They can pay again and tap I have paid.');
+              loadBookings();
+            } catch (error) {
+              Alert.alert('Error', error.response?.data?.message || 'Failed to reject payment');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const isBookingEnded = (booking) => {
@@ -210,8 +280,8 @@ export default function BookingsScreen({ navigation }) {
       <View style={[styles.bookingCard, SHADOWS.medium]}>
       <View style={styles.bookingHeader}>
         <Text style={styles.bookingId}>#{item.booking_number || item.id}</Text>
-        <Text style={[styles.status, styles[item.status]]}>
-          {item.status === 'no_show' ? 'No Show' : item.status}
+        <Text style={[styles.status, styles[item.status] || styles.confirmed]}>
+          {statusLabel(item.status)}
         </Text>
       </View>
       <Text style={styles.turfName}>{item.turf?.name}</Text>
@@ -238,6 +308,30 @@ export default function BookingsScreen({ navigation }) {
           </Text>
         </View>
       </View>
+      {needsConfirm(item) && (
+        <View style={styles.actionButtonsContainer}>
+          <View style={styles.actionButtons}>
+            <Button
+              title="Received"
+              variant="action"
+              onPress={() => handleReceived(item)}
+              style={styles.actionButton}
+            />
+            <Button
+              title="Not received"
+              variant="secondary"
+              onPress={() => handleNotReceived(item)}
+              style={styles.actionButton}
+            />
+          </View>
+          <Button
+            title="Cancel"
+            variant="secondary"
+            onPress={() => handleCancelBooking(item)}
+            style={styles.cancelButton}
+          />
+        </View>
+      )}
       {item.status === 'confirmed' && (
         <View style={styles.actionButtonsContainer}>
           {item.payment_status === 'pending' && (
@@ -292,20 +386,32 @@ export default function BookingsScreen({ navigation }) {
 
       <View style={styles.filterBar}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusFilters}>
-          {['all', 'confirmed', 'completed', 'cancelled', 'no_show'].map((status) => (
+          {['all', 'needs_confirmation', 'confirmed', 'completed', 'cancelled', 'no_show'].map((status) => (
             <TouchableOpacity
               key={status}
               style={[styles.statusChip, filters.status === status && styles.statusChipActive]}
-              onPress={() => setFilters({...filters, status})}
+              onPress={() => {
+                if (status === 'needs_confirmation') {
+                  setFilters({ ...filters, status, date: 'all' });
+                } else {
+                  setFilters({ ...filters, status });
+                }
+              }}
             >
               <Text style={[styles.statusChipText, filters.status === status && styles.statusChipTextActive]}>
-                {status === 'all' ? 'All' : status === 'no_show' ? 'No Show' : status.charAt(0).toUpperCase() + status.slice(1)}
+                {status === 'all'
+                  ? 'All'
+                  : status === 'no_show'
+                    ? 'No Show'
+                    : status === 'needs_confirmation'
+                      ? 'Needs confirm'
+                      : status.charAt(0).toUpperCase() + status.slice(1)}
               </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
         <TouchableOpacity style={styles.filterBtn} onPress={() => setShowFilters(true)}>
-          <Ionicons name="options-outline" size={20} color={COLORS.primary} />
+          <Ionicons name="options-outline" size={20} color={COLORS.primary[600]} />
           {(filters.booking_type !== 'all' || filters.payment_status !== 'all' || filters.date !== 'today') && (
             <View style={styles.filterBadge} />
           )}
@@ -593,6 +699,18 @@ const styles = StyleSheet.create({
   no_show: {
     backgroundColor: COLORS.warning[100],
     color: COLORS.warning[700],
+  },
+  awaiting_confirmation: {
+    backgroundColor: '#FFEDD5',
+    color: '#C2410C',
+  },
+  pay_on_arrival: {
+    backgroundColor: COLORS.warning[100],
+    color: COLORS.warning[700],
+  },
+  expired: {
+    backgroundColor: COLORS.gray[100],
+    color: COLORS.gray[700],
   },
   turfName: {
     ...FONTS.body,
